@@ -9,3 +9,6 @@ assets/audio/_original/
 
 # 流派图缩放前的原始备份，不进仓库
 assets/武学流派/_original/
+
+# Playwright CLI 临时快照
+.playwright-cli/
