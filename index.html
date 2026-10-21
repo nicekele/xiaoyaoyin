@@ -476,11 +476,27 @@
             flex: 1;
         }
         .school-branch {
-            padding: 13px 13px 12px;
+            display: grid;
+            grid-template-columns: 96px 1fr;
+            gap: 14px;
+            align-items: start;
+            padding: 13px;
             background: rgba(10,10,10,0.5);
             border: 1px solid rgba(201,169,97,0.1);
             transition: border-color 0.3s ease, background 0.3s ease;
         }
+        .school-branch:hover {
+            border-color: var(--school-accent);
+            background: var(--school-accent-soft);
+        }
+        .branch-art {
+            width: 96px; height: 96px;
+            object-fit: cover;
+            display: block;
+            border: 1px solid rgba(201,169,97,0.32);
+            background: #0d0c0a;
+        }
+        .branch-body { min-width: 0; }
         .school-branch:hover {
             border-color: var(--school-accent);
             background: var(--school-accent-soft);
@@ -1573,6 +1589,8 @@
             .weapon-grid { grid-template-columns: 1fr; }
             .school-grid { grid-template-columns: 1fr; gap: 14px; }
             .school-name { font-size: 30px; letter-spacing: 10px; }
+            .school-branch { grid-template-columns: 80px 1fr; gap: 11px; padding: 11px; }
+            .branch-art { width: 80px; height: 80px; }
             .boss-cat { grid-template-columns: 1fr; padding: 22px 18px; }
             .boss-cat-art { min-height: 140px; order: -1; }
             .boss-cat-name { font-size: 21px; letter-spacing: 4px; }
@@ -1629,7 +1647,8 @@
             <li><a href="#news">新闻</a></li>
             <li><a href="members.html">成员管理</a></li>
             <li><a href="runs.html">打本统计</a></li>
-        </ul>
+                    <li><a href="admin.html">管理后台</a></li>
+</ul>
     </div>
     <button class="nav-toggle" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="navMenu">
         <span></span><span></span><span></span>
@@ -2301,6 +2320,9 @@
     </div>
 </footer>
 
+<script src="assets/vendor/supabase.min.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/db.js"></script>
 <script src="assets/schools.js"></script>
 <script>
 /* ============================================================
@@ -2394,15 +2416,21 @@ function renderSchools(){
             <div class="school-branches">
                 ${s.branches.map(b => `
                     <div class="school-branch">
-                        <div class="school-branch-head">
-                            <span class="b">${b.name}</span>
-                            <span class="sep">·</span>
-                            <span class="full">${s.name}·${b.name}</span>
+                        <img class="branch-art"
+                             src="assets/武学流派/${s.name}${b.name}.jpg"
+                             alt="${s.name}·${b.name}"
+                             loading="lazy" width="96" height="96">
+                        <div class="branch-body">
+                            <div class="school-branch-head">
+                                <span class="b">${b.name}</span>
+                                <span class="sep">·</span>
+                                <span class="full">${s.name}·${b.name}</span>
+                            </div>
+                            <div class="school-xinfa">
+                                ${b.xinfa.map(x => `<span>${x}</span>`).join("")}
+                            </div>
+                            ${b.desc ? `<div class="school-desc">${b.desc}</div>` : ""}
                         </div>
-                        <div class="school-xinfa">
-                            ${b.xinfa.map(x => `<span>${x}</span>`).join("")}
-                        </div>
-                        ${b.desc ? `<div class="school-desc">${b.desc}</div>` : ""}
                     </div>`).join("")}
             </div>
         </div>`).join("");
@@ -2488,7 +2516,9 @@ function renderBosses(){
     }).join('');
 }
 
-/* ---------- 新闻中心 ---------- */
+/* ---------- 新闻中心（数据来自云端数据库 posts 表，全站同步） ---------- */
+// 本地数组仅作为数据库返回前的占位；数据库加载成功后会被真实数据整体替换，
+// 加载失败则显示空态，不再拿演示数据冒充线上内容。
 const NEWS = [
     { m: "09月", d: "17", cat: "公告", title: "9月17日 2.8.0B版本「芳草意留人」更新公告", sub: "全新内容上线 · 多项优化与修复" },
     { m: "09月", d: "10", cat: "新闻", title: "新一轮武学平衡优化思路分享 内含先琢测试改动一览", sub: "开发组公开武学调优方向说明" },
@@ -2499,30 +2529,83 @@ const NEWS = [
     { m: "05月", d: "19", cat: "活动", title: "ROG×燕云十六声 江湖争锋挑战赛热血启幕！", sub: "创意执笔，赢取枪神9Plus联名神装" },
 ];
 
+let POSTS_CACHE = [];
+let newsCat = "all";
+let newsLoaded = false;
+
 // 首次渲染交给滚动动画观察器；之后切换 Tab 生成的节点直接显示，
 // 否则它们不会被 IntersectionObserver 观察到而永远停在 opacity:0
 let newsFirstRender = true;
 
+function escapeHtml(s){
+    return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function splitDate(txt){
+    const s = String(txt || "");
+    const mm = s.match(/(\d+\s*月)\s*(\d+)/);
+    if (mm) return { m: mm[1].replace(/\s/g, ""), d: mm[2] };
+    return { m: s, d: "" };
+}
+
 function renderNews(cat){
+    newsCat = cat || "all";
     const el = document.getElementById("newsList");
     if (!el) return;
-    const list = (!cat || cat === "all") ? NEWS : NEWS.filter(n => n.cat === cat);
+
+    const list = !newsLoaded
+        ? NEWS
+        : (!newsCat || newsCat === "all")
+            ? POSTS_CACHE
+            : POSTS_CACHE.filter(n => n.category === newsCat);
+
     if (!list.length) {
-        el.innerHTML = `<div style="padding:40px 0;text-align:center;color:#7a7464;font-size:14px;letter-spacing:2px;">该分类下暂无内容</div>`;
+        el.innerHTML = `<div style="padding:40px 0;text-align:center;color:#7a7464;font-size:14px;letter-spacing:2px;">${
+            newsLoaded ? "该分类下暂无内容" : "正在加载内容…"
+        }</div>`;
         return;
     }
+
     const cls = newsFirstRender ? "news-item reveal" : "news-item reveal is-in";
     newsFirstRender = false;
-    el.innerHTML = list.map(n => `
+
+    el.innerHTML = list.map(n => {
+        const catName = n.cat || n.category || "新闻";
+        const title = n.title || "";
+        const sub = n.sub || n.subtitle || "";
+        let mm, dd;
+        if (n.m !== undefined) { mm = n.m; dd = n.d; }
+        else { const s = splitDate(n.post_date); mm = s.m; dd = s.d; }
+        return `
         <div class="${cls}" tabindex="0" role="link">
-            <div class="news-date"><div class="m">${n.m}</div><div class="d">${n.d}</div></div>
+            <div class="news-date"><div class="m">${escapeHtml(mm)}</div><div class="d">${escapeHtml(dd)}</div></div>
             <div>
-                <span class="news-cat-tag nt-${n.cat}">${n.cat}</span>
-                <span class="news-title">${n.title}</span>
-                <div class="news-subtitle">${n.sub}</div>
+                <span class="news-cat-tag nt-${escapeHtml(catName)}">${escapeHtml(catName)}</span>
+                <span class="news-title">${escapeHtml(title)}</span>
+                <div class="news-subtitle">${escapeHtml(sub)}</div>
             </div>
             <div class="news-arrow">›</div>
-        </div>`).join("");
+        </div>`;
+    }).join("");
+}
+
+function loadNewsFromDb(){
+    if (!window.DB) {
+        newsLoaded = true;
+        renderNews(newsCat);
+        return;
+    }
+    DB.listPosts().then(function(rows){
+        POSTS_CACHE = rows || [];
+        newsLoaded = true;
+        renderNews(newsCat);
+    }).catch(function(){
+        // 失败时不拿演示数据冒充线上内容
+        POSTS_CACHE = [];
+        newsLoaded = true;
+        renderNews(newsCat);
+    });
 }
 
 /* ---------- Tab → 数据联动 ---------- */
@@ -2725,6 +2808,10 @@ renderNews("all");
 applyWorld("qinghe", true);
 initHeroMedia();
 initAudio();
+// DB 由 defer 脚本加载，DOMContentLoaded 时才可用；届时用云端内容覆盖占位
+document.addEventListener('DOMContentLoaded', function(){
+    loadNewsFromDb();
+});
 </script>
 <script src="assets/base.js" defer></script>
 </body>

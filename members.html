@@ -152,6 +152,19 @@
         }
         .op-btn:hover { border-color: var(--gold); color: var(--gold); }
         .op-btn.danger:hover { border-color: var(--red-light); color: var(--red-light); }
+        /* 写操作按钮默认隐藏，body.is-admin（管理员登录态）时显示 */
+        [data-admin-only] { display: none !important; }
+        body.is-admin [data-admin-only] { display: inline-block !important; }
+        .empty-cell {
+            text-align: center; color: #7a7464;
+            padding: 46px 20px !important; font-size: 14px; letter-spacing: 2px;
+        }
+        .db-err {
+            padding: 12px 18px; font-size: 13px; color: #f0c8c8;
+            background: rgba(139, 35, 35, 0.14);
+            border-left: 3px solid var(--red-light);
+            letter-spacing: 0.5px;
+        }
 
         .pagination {
             display: flex; justify-content: space-between; align-items: center;
@@ -204,14 +217,15 @@
                 <li><a href="runs.html">打本统计</a></li>
                 <li><a href="index.html#sect">宗门法规</a></li>
                 <li><a href="index.html#news">新闻</a></li>
-            </ul>
+                        <li><a href="admin.html">管理后台</a></li>
+</ul>
         </div>
         <button class="nav-toggle" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="navMenu">
             <span></span><span></span><span></span>
         </button>
         <div class="nav-right">
             <button class="nav-btn" onclick="exportData()">📤 导出数据</button>
-            <button class="nav-btn nav-btn-primary" onclick="addMemberBtn()">➕ 添加成员</button>
+            <button class="nav-btn nav-btn-primary" data-admin-only onclick="addMemberBtn()">➕ 添加成员</button>
         </div>
     </nav>
 
@@ -225,30 +239,30 @@
         <div class="stats-strip">
             <div class="stat-card reveal">
                 <div class="label">宗 门 总 人 数</div>
-                <div><span class="num" id="totalCnt">100</span><span class="unit">人</span></div>
-                <div class="sub">较上周 + 4 人 新入</div>
+                <div><span class="num" id="totalCnt">0</span><span class="unit">人</span></div>
+                <div class="sub">以云端数据库为准</div>
             </div>
             <div class="stat-card reveal">
                 <div class="label">当 前 在 线</div>
-                <div><span class="num" id="onlineCnt">37</span><span class="unit">人</span></div>
-                <div class="sub">🔴 在线率 <strong style="color:var(--gold);" id="onlineRate">28.9%</strong></div>
+                <div><span class="num" id="onlineCnt">0</span><span class="unit">人</span></div>
+                <div class="sub">🔴 在线率 <strong style="color:var(--gold);" id="onlineRate">0.0%</strong></div>
             </div>
             <div class="stat-card reveal">
                 <div class="label">本 周 平 均 活 跃</div>
-                <div><span class="num" id="avgAct">4862</span><span class="unit">点</span></div>
-                <div class="sub">较上周 <span style="color:#9cd3b0;">↑ 6.8%</span></div>
+                <div><span class="num" id="avgAct">0</span><span class="unit">点</span></div>
+                <div class="sub">数据来自云端 · 实时同步</div>
             </div>
             <div class="stat-card reveal">
                 <div class="label">本 周 打 本 总 次</div>
-                <div><span class="num" id="runsCnt">542</span><span class="unit">次</span></div>
-                <div class="sub">较上周 ↑ 12% · 分类明细见「打本统计」</div>
+                <div><span class="num" id="runsCnt">0</span><span class="unit">次</span></div>
+                <div class="sub">分类明细见「打本统计」</div>
             </div>
         </div>
 
         <!-- 工具栏 -->
         <div class="toolbar">
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="搜索成员名 / 门派 / 心法 / 武器..." oninput="renderTable()">
+                <input type="text" id="searchInput" placeholder="搜索姓名 / 门派 / 心法 / 武器..." oninput="renderTable()">
             </div>
             <div class="filter-group">
                 <label>门派:</label>
@@ -269,7 +283,7 @@
                 </select>
             </div>
             <button class="btn" onclick="resetFilter()">🔄 重置筛选</button>
-            <button class="btn btn-primary" onclick="addMemberBtn()">➕ 新增成员</button>
+            <button class="btn btn-primary" data-admin-only onclick="addMemberBtn()">➕ 新增成员</button>
         </div>
 
         <!-- 表格 -->
@@ -309,87 +323,76 @@
         </div>
     </div>
 
+<script src="assets/vendor/supabase.min.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/db.js"></script>
 <script src="assets/schools.js"></script>
 <script>
-// 大类 → 主修武器池：按各门派心法推断（鸣金剑枪、牵丝扇伞、裂石刀陌、破竹双刀拳绳），
-// 这样人物的武器与所修武学保持一致，不会出现「鸣金·虹 却主修伞」这种矛盾
-const SCHOOL_WEAPONS = {
-    "鸣金": ["剑", "枪"],
-    "牵丝": ["扇", "伞"],
-    "裂石": ["刀", "陌刀", "枪"],
-    "破竹": ["双刀", "拳", "绳镖", "伞"],
-};
-// 身份数量由 ROLE_QUOTA 控制，见下方 buildRolePool
-const firstNames = ["李","上官","慕容","独孤","林","叶","顾","沈","萧","云","楚","风","陆","方","苏","南宫","赵","钱","孙","周","吴","郑","王","冯","陈","卫","蒋","沈","韩","杨"];
-const givenNames = ["逍遥","问天","无忌","云轩","清风","惊鸿","逸尘","长夜","长歌","慕白","飞鸿","雪琪","灵儿","若曦","听雨","忘机","无言","无咎","天行","九歌","潇湘","寒江","飞羽","凌烟"];
-
-function genName(){ return firstNames[Math.floor(Math.random()*firstNames.length)] + givenNames[Math.floor(Math.random()*givenNames.length)]; }
-function hashStr(s){ let h=0; for(const c of s) h=(h*31+c.charCodeAt(0))&0x7fffffff; return h; }
-
-/* 身份配额：1 个社长、1 个副社、6 个管理、最多 20 个学徒，其余为社众，
-   合计固定为宗门总人数。数量由配额表控制，再用固定种子打散，
-   避免「领导挤在列表最前」也让每次刷新结果一致。 */
-const ROLE_QUOTA = [
-    ["社长", 1],
-    ["副社", 1],
-    ["管理", 6],
-    ["学徒", 20],
-];
-function buildRolePool(n){
-    const pool = [];
-    ROLE_QUOTA.forEach(([role, count]) => {
-        const c = Math.min(count, n - pool.length);
-        for (let k = 0; k < c; k++) pool.push(role);
-    });
-    while (pool.length < n) pool.push("社众");
-    let s = 20260919;
-    for (let i = pool.length - 1; i > 0; i--){
-        s = (s * 1103515245 + 12345) & 0x7fffffff;
-        const j = s % (i + 1);
-        const t = pool[i]; pool[i] = pool[j]; pool[j] = t;
-    }
-    return pool;
-}
-
-// 门派分支数据来自 assets/schools.js（YANYUN_BRANCHES）
-function buildMembers(n=100){
-    const branches = window.YANYUN_BRANCHES || [];
-    const rolePool = buildRolePool(n);
-    const arr = [];
-    const nameSet = new Set();
-    for(let i=0;i<n;i++){
-        let name; do { name = genName(); } while(nameSet.has(name)); nameSet.add(name);
-        const seed = hashStr(name);
-        const branch = branches.length
-            ? branches[seed % branches.length]
-            : { key: "—", schoolId: "", school: "", xinfa: ["—"] };
-        const xinfa = branch.xinfa[seed % branch.xinfa.length];
-        const pool = SCHOOL_WEAPONS[branch.school] || ["剑"];
-        const weapon = pool[seed % pool.length];
-        const role = rolePool[i];
-        // 等级上限 100
-        const lv = 92 + (seed % 9);
-        // 周活跃上限 8000（月卡档 5000+ 之上仍留空间）
-        const active = 500 + (seed % 7500);
-        // 本周打本数上限 5 次（侠境副本每周最多 5 次）
-        const runs = 1 + (seed % 5);
-        const online = (seed % 7) < 2 ? "online" : "offline";
-        const daysAgo = online==="online" ? 0 : (seed % 15);
-        arr.push({
-            id: i+1, name, weapon, xinfa,
-            school: branch.key, schoolId: branch.schoolId,
-            level: lv, role,
-            active, runs, online,
-            lastLogin: daysAgo===0 ? "刚刚" : daysAgo+"天前",
-            lastLoginDays: daysAgo,
-            onlineHours: (seed%120) + (online==="online"?3:0)
-        });
-    }
-    return arr;
-}
-
-let MEMBERS = buildMembers(100);
+/* ============================================================
+   成员数据来源：云端数据库（Supabase），不再本地随机生成。
+   - 游客可浏览（数据库权限策略为公开只读）
+   - 增删改仅管理员可用（由数据库权限策略强制拦截）
+   - 官网所有页面读同一张表，管理员在后台增删后全站同步
+   ============================================================ */
+let MEMBERS = [];
+let dataLoaded = false;
+let isAdminUser = false;
 let curPage = 1; let pageSize = 20; let sortKey = "id"; let sortDir = 1; // 1 asc -1 desc
+
+/* 数据库字段 → 页面内部结构（保持既有渲染与排序逻辑不变） */
+function mapRow(r){
+    const branch = (window.YANYUN_BRANCH_BY_KEY || {})[r.school] || null;
+    const txt = r.last_login == null ? "" : String(r.last_login);
+    const mDays = txt.match(/(\d+)\s*天/);
+    return {
+        id: r.id,
+        name: r.name || "",
+        weapon: r.weapon || "",
+        xinfa: r.xinfa || "",
+        school: r.school || "",
+        schoolId: r.schoolId || (branch ? branch.schoolId : ""),
+        level: r.level == null ? 100 : r.level,
+        role: r.role || "社众",
+        active: r.active || 0,
+        runs: r.runs || 0,
+        online: (r.online === true || r.online === "online") ? "online" : "offline",
+        lastLogin: txt || "—",
+        lastLoginDays: (txt === "刚刚" || txt === "") ? 0 : (mDays ? parseInt(mDays[1], 10) : 30),
+        onlineHours: 0,
+    };
+}
+function dbErrorText(e){
+    return (e && e.message) ? e.message : String(e);
+}
+
+async function loadMembersFromDb(){
+    try {
+        const rows = await DB.listMembers();
+        MEMBERS = (rows || []).map(mapRow);
+        dataLoaded = true;
+    } catch (e) {
+        MEMBERS = [];
+        dataLoaded = true;
+        const wrap = document.querySelector('.mem-table-wrap');
+        if (wrap) {
+            const bar = document.createElement('div');
+            bar.className = 'db-err';
+            bar.textContent = '成员数据加载失败：' + dbErrorText(e);
+            wrap.prepend(bar);
+        }
+    }
+    try { isAdminUser = await DB.isAdmin(); } catch (e) { isAdminUser = false; }
+    applyAdminUI();
+    renderTable();
+}
+
+/* 写操作入口仅管理员可见：由 <style> 中的
+   [data-admin-only] + body.is-admin 规则控制，
+   这样表格每次重渲染出的新按钮也自动遵守，不受 JS 时序影响 */
+function applyAdminUI(){
+    document.body.classList.toggle('is-admin', isAdminUser);
+}
+
 
 function applyFilters(list){
     const kw = document.getElementById("searchInput").value.trim().toLowerCase();
@@ -435,16 +438,25 @@ function renderTable(){
     const start = (curPage-1)*pageSize;
     const slice = data.slice(start, start+pageSize);
 
-    document.getElementById("totalCnt").textContent = MEMBERS.length;
+    const n = MEMBERS.length;
+    document.getElementById("totalCnt").textContent = n;
     const onlineN = MEMBERS.filter(m=>m.online==="online").length;
     document.getElementById("onlineCnt").textContent = onlineN;
     document.getElementById("onlineRate").textContent =
-        (MEMBERS.length ? (onlineN / MEMBERS.length * 100).toFixed(1) : "0.0") + "%";
-    const avgA = Math.round(MEMBERS.reduce((s,m)=>s+m.active,0)/MEMBERS.length);
+        (n ? (onlineN / n * 100).toFixed(1) : "0.0") + "%";
+    // 空列表时避免除零
+    const avgA = n ? Math.round(MEMBERS.reduce((s,m)=>s+m.active,0)/n) : 0;
     document.getElementById("avgAct").textContent = avgA;
     document.getElementById("runsCnt").textContent = MEMBERS.reduce((s,m)=>s+m.runs,0);
 
     const tb = document.getElementById("memBody");
+    if (!slice.length) {
+        const tip = !dataLoaded ? "正在加载成员数据…"
+            : (n === 0
+                ? (isAdminUser ? "暂无成员。点右上角「新增成员」开始录入。" : "暂无成员数据")
+                : "没有匹配的结果");
+        tb.innerHTML = `<tr><td colspan="10" class="empty-cell">${tip}</td></tr>`;
+    } else {
     tb.innerHTML = slice.map(m => {
         const pct = Math.min(100, Math.round(m.active/100));
         const initial = m.name.slice(0, 2);
@@ -467,10 +479,11 @@ function renderTable(){
             <td><span class="online-dot ${m.online}"></span>${m.online==="online"?"<span style='color:#9cd3b0'>在线</span>":"<span style='color:#888'>离线</span>"}</td>
             <td>
                 <button class="op-btn" onclick="viewMem(${m.id})">查看</button>
-                <button class="op-btn danger" onclick="delMem(${m.id})">移除</button>
+                <button class="op-btn danger" data-admin-only onclick="delMem(${m.id})">移除</button>
             </td>
         </tr>`;
     }).join("");
+    }
 
     // 排序箭头 + aria 状态
     document.querySelectorAll("#memTable thead th").forEach(th => {
@@ -548,14 +561,30 @@ function viewMem(id){
 function delMem(id){
     const m = MEMBERS.find(x=>x.id===id);
     if (!m) return;
-    if (!confirm(`确认移除成员 ${m.name}？`)) return;
-    MEMBERS = MEMBERS.filter(x=>x.id!==id);
-    renderTable();
+    if (!confirm(`确认移除成员 ${m.name}？此操作会同步影响所有页面。`)) return;
+    if (window.DB) {
+        DB.deleteMember(id).then(function(){
+            MEMBERS = MEMBERS.filter(x=>x.id!==id);
+            renderTable();
+        }).catch(function(e){
+            alert("删除失败：" + ((e && e.message) || "需要管理员权限（请先在管理后台登录）"));
+        });
+    } else {
+        MEMBERS = MEMBERS.filter(x=>x.id!==id);
+        renderTable();
+    }
 }
-function addMemberBtn(){ alert("⚠ 新增成员功能演示：\n正式版本可录入姓名、武学、心法、身份等信息。"); }
+function addMemberBtn(){ location.href = "admin.html"; }
 function exportData(){ alert("📤 数据导出中...\n支持 Excel / CSV / JSON 三种格式导出。"); }
 
+// 先渲染加载态，再异步读取云端成员数据
 renderTable();
+if (window.DB) {
+    loadMembersFromDb();
+} else {
+    dataLoaded = true;
+    renderTable();
+}
 </script>
 <script src="assets/base.js" defer></script>
 </body>

@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - 逍遥引 · 燕云十六声</title>
+    <meta name="description" content="逍遥引宗门管理后台：登录认证、成员管理、内容发布。">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="robots" content="noindex, nofollow">
+    <script>document.documentElement.classList.add('js');</script>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%238b2323'/%3E%3Ctext x='16' y='23' font-size='20' text-anchor='middle' fill='%23f5f0e8' font-family='serif'%3E%E7%87%95%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="assets/base.css">
+    <style>
+        /* ====== 认证卡片 ====== */
+        .auth-wrap {
+            max-width: 460px;
+            margin: 10px auto 40px;
+        }
+        .auth-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-bd);
+            padding: 34px 34px 30px;
+            position: relative;
+        }
+        .auth-card::before {
+            content: ""; position: absolute;
+            top: -1px; left: -1px; width: 18px; height: 18px;
+            border: 1px solid var(--gold);
+            border-right: none; border-bottom: none;
+        }
+        .auth-card::after {
+            content: ""; position: absolute;
+            bottom: -1px; right: -1px; width: 18px; height: 18px;
+            border: 1px solid var(--gold);
+            border-left: none; border-top: none;
+        }
+        .auth-title {
+            font-size: 24px; font-weight: bold; letter-spacing: 6px;
+            color: var(--paper); text-align: center; margin-bottom: 6px;
+        }
+        .auth-sub {
+            text-align: center; font-size: 13px; color: #8f8877;
+            letter-spacing: 1px; margin-bottom: 24px; line-height: 1.8;
+        }
+        .auth-tabs {
+            display: flex; gap: 0; margin-bottom: 24px;
+            border-bottom: 1px solid var(--hairline);
+        }
+        .auth-tabs button {
+            flex: 1; padding: 12px 10px;
+            background: transparent; border: none;
+            border-bottom: 2px solid transparent;
+            color: #9a9383; font-size: 15px; letter-spacing: 4px;
+            cursor: pointer; font-family: inherit;
+            transition: color 0.25s, border-color 0.25s;
+        }
+        .auth-tabs button.active {
+            color: var(--gold); border-bottom-color: var(--gold);
+        }
+        .field { margin-bottom: 16px; }
+        .field label {
+            display: block;
+            font-size: 12.5px; letter-spacing: 2px;
+            color: #8f8877; margin-bottom: 7px;
+        }
+        .field input, .field select, .field textarea {
+            width: 100%;
+            padding: 11px 14px;
+            background: #0a0908;
+            border: 1px solid rgba(201,169,97,0.28);
+            color: var(--paper);
+            font-size: 14px; font-family: inherit;
+            outline: none;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+        .field textarea { min-height: 120px; resize: vertical; line-height: 1.7; }
+        .field input:focus, .field select:focus, .field textarea:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(201,169,97,0.12);
+        }
+        .form-actions { margin-top: 22px; display: flex; gap: 12px; }
+        .form-actions .btn { flex: 1; padding: 13px; font-size: 14px; letter-spacing: 3px; }
+        .msg {
+            margin-top: 16px; padding: 11px 14px;
+            font-size: 13px; line-height: 1.7; letter-spacing: 0.5px;
+            border-left: 3px solid var(--gold);
+            background: rgba(201,169,97,0.07);
+            color: #d4c9b3;
+            display: none;
+        }
+        .msg.show { display: block; }
+        .msg.err { border-left-color: var(--red-light); background: rgba(139,35,35,0.12); color: #f0c8c8; }
+        .msg.ok { border-left-color: var(--jade-light); background: rgba(74,124,89,0.14); color: #c8ecd4; }
+
+        /* ====== 管理区 ====== */
+        .admin-bar {
+            display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+            padding: 16px 22px;
+            background: linear-gradient(135deg, rgba(201,169,97,0.07), rgba(139,35,35,0.05));
+            border: 1px solid rgba(201,169,97,0.32);
+            margin-bottom: 26px;
+        }
+        .admin-bar .who {
+            font-size: 15px; letter-spacing: 1px; color: var(--paper);
+        }
+        .admin-bar .who span { color: var(--gold); }
+        .admin-bar .badge {
+            padding: 4px 12px; font-size: 12px; letter-spacing: 2px;
+            background: var(--red); color: var(--paper);
+        }
+        .admin-bar .spacer { flex: 1; }
+
+        .admin-tabs {
+            display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap;
+        }
+        .admin-tabs button {
+            padding: 10px 24px;
+            background: transparent;
+            border: 1px solid rgba(201,169,97,0.3);
+            color: #9a9383; font-size: 14px; letter-spacing: 3px;
+            cursor: pointer; font-family: inherit;
+            transition: all 0.25s;
+        }
+        .admin-tabs button:hover { border-color: var(--gold); color: var(--gold); }
+        .admin-tabs button.active {
+            background: var(--gold); border-color: var(--gold);
+            color: var(--ink-black); font-weight: bold;
+        }
+
+        .grid-2 {
+            display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px;
+            align-items: start;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 16px;
+        }
+        .form-sub-title {
+            font-size: 13px; letter-spacing: 3px;
+            color: var(--gold); margin: 20px 0 12px;
+            padding-top: 16px;
+            border-top: 1px dashed rgba(201,169,97,0.2);
+        }
+        @media (max-width: 1100px) { .grid-2 { grid-template-columns: 1fr; } }
+        @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+
+        .table-wrap {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-bd);
+            overflow-x: auto;
+        }
+        table.tbl {
+            width: 100%; border-collapse: collapse; min-width: 720px;
+        }
+        table.tbl th {
+            padding: 14px 14px;
+            background: #0d0c0a;
+            border-bottom: 2px solid rgba(201,169,97,0.25);
+            color: var(--gold); font-size: 13px; letter-spacing: 2px;
+            text-align: left; white-space: nowrap;
+        }
+        table.tbl td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 13.5px; color: #c9c1ae;
+        }
+        table.tbl tbody tr:hover { background: rgba(201,169,97,0.05); }
+        .op {
+            padding: 5px 11px; font-size: 12px;
+            border: 1px solid rgba(201,169,97,0.35);
+            color: #b5ad99; background: transparent;
+            cursor: pointer; font-family: inherit;
+            transition: all 0.2s; margin-right: 6px;
+        }
+        .op:hover { border-color: var(--gold); color: var(--gold); }
+        .op.danger:hover { border-color: var(--red-light); color: var(--red-light); }
+        .op:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .panel-title2 {
+            font-size: 17px; font-weight: bold; letter-spacing: 4px;
+            color: var(--paper); margin-bottom: 18px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .panel-title2::before {
+            content: ""; width: 4px; height: 17px; background: var(--gold);
+        }
+        .hint {
+            font-size: 12px; color: #7a7464; line-height: 1.8;
+            letter-spacing: 0.5px; margin-top: 14px;
+            border-top: 1px dashed rgba(201,169,97,0.18);
+            padding-top: 14px;
+        }
+        .empty {
+            text-align: center; color: #7a7464;
+            padding: 40px 20px; font-size: 14px; letter-spacing: 2px;
+        }
+        .post-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: 13px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .post-item:last-child { border-bottom: none; }
+        .post-item .pi-main { flex: 1; min-width: 0; }
+        .post-item .pi-title {
+            font-size: 14.5px; color: var(--paper);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .post-item .pi-sub { font-size: 12px; color: #7a7464; margin-top: 3px; }
+        .cat {
+            display: inline-block; padding: 3px 9px;
+            font-size: 11.5px; letter-spacing: 1px; border: 1px solid;
+            flex-shrink: 0;
+        }
+        .cat-新闻 { color: var(--gold); border-color: var(--gold); background: rgba(201,169,97,0.12); }
+        .cat-公告 { color: var(--red-light); border-color: var(--red); background: rgba(139,35,35,0.15); }
+        .cat-活动 { color: var(--jade-light); border-color: var(--jade); background: rgba(74,124,89,0.18); }
+
+        @media (max-width: 640px) {
+            .auth-card { padding: 26px 20px 24px; }
+            .admin-bar { flex-direction: column; align-items: flex-start; }
+            .admin-tabs button { padding: 9px 16px; font-size: 13px; letter-spacing: 2px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="nav-left">
+        <a href="index.html" class="nav-logo">
+            <div class="nav-logo-seal">逍</div>
+            <div class="nav-logo-text"><span>逍遥引</span> · 燕云十六声</div>
+        </a>
+        <ul class="nav-menu" id="navMenu">
+            <li><a href="index.html">首页</a></li>
+            <li><a href="index.html#world">燕云世界</a></li>
+            <li><a href="index.html#schools">武学门派</a></li>
+            <li><a href="index.html#boss">首领集</a></li>
+            <li><a href="index.html#sect">宗门百业</a></li>
+            <li><a href="members.html">成员管理</a></li>
+            <li><a href="activity.html">活跃度</a></li>
+            <li><a href="runs.html">打本统计</a></li>
+            <li><a href="admin.html" class="active">管理后台</a></li>
+        </ul>
+    </div>
+    <button class="nav-toggle" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="navMenu">
+        <span></span><span></span><span></span>
+    </button>
+    <div class="nav-right">
+        <button class="nav-btn" onclick="location.href='index.html'">返回官网</button>
+        <button class="nav-btn nav-btn-primary" onclick="location.href='members.html'">成员名录</button>
+    </div>
+</nav>
+
+<div class="page-wrap">
+    <div class="page-head">
+        <div class="page-en">ADMIN CONSOLE</div>
+        <h1 class="page-cn">管 理 后 台</h1>
+    </div>
+
+    <!-- 加载中 -->
+    <div id="viewLoading" class="empty">正在连接数据库…</div>
+
+    <!-- 入口卡片：默认显示，避免一进来就是登录框 -->
+    <div id="viewGate" class="auth-wrap" hidden>
+        <div class="auth-card">
+            <div class="auth-title">管 理 后 台</div>
+            <div class="auth-sub" id="gateSub">
+                此页面用于宗门管理操作<br>
+                <strong style="color:var(--gold);">管理员</strong>可在此管理成员、发布内容<br>
+                普通成员与访客无需登录，官网内容照常浏览
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" type="button" id="btnEnterAuth">登 录</button>
+                <button class="btn" type="button" id="btnToSite">返 回 官 网</button>
+            </div>
+            <p class="hint" id="gateHint"></p>
+        </div>
+    </div>
+
+    <!-- 未登录：登录 / 注册（由入口卡片按钮展开） -->
+    <div id="viewAuth" class="auth-wrap" hidden>
+        <div class="auth-card">
+            <div class="auth-title">宗门验证</div>
+            <div class="auth-sub" id="authSub">管理员登录后可管理成员与发布内容<br>普通成员无需注册，直接浏览官网即可</div>
+
+            <div class="auth-tabs" data-tab-group="authtab">
+                <button type="button" data-tab="login" class="active">登 录</button>
+                <button type="button" data-tab="signup" id="tabSignup">注 册</button>
+            </div>
+
+            <!-- 登录 -->
+            <form id="loginForm" data-tab-panel="login" data-tab-group="authtab">
+                <div class="field">
+                    <label for="liEmail">邮箱</label>
+                    <input type="email" id="liEmail" autocomplete="username" required placeholder="you@example.com">
+                </div>
+                <div class="field">
+                    <label for="liPass">密码</label>
+                    <input type="password" id="liPass" autocomplete="current-password" required placeholder="至少 6 位">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" type="submit">登 录</button>
+                </div>
+                <div class="msg" id="loginMsg"></div>
+            </form>
+
+            <!-- 注册（仅在无管理员或管理员操作时可用） -->
+            <form id="signupForm" data-tab-panel="signup" data-tab-group="authtab" hidden>
+                <div class="field">
+                    <label for="suEmail">邮箱</label>
+                    <input type="email" id="suEmail" autocomplete="username" required placeholder="you@example.com">
+                </div>
+                <div class="field">
+                    <label for="suName">显示名称</label>
+                    <input type="text" id="suName" required placeholder="如：社主">
+                </div>
+                <div class="field">
+                    <label for="suPass">密码</label>
+                    <input type="password" id="suPass" autocomplete="new-password" required placeholder="至少 6 位">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" type="submit">创 建 账 号</button>
+                </div>
+                <div class="msg" id="signupMsg"></div>
+            </form>
+
+            <p class="hint" id="authHint"></p>
+        </div>
+    </div>
+
+    <!-- 已登录但非管理员 -->
+    <div id="viewMember" hidden>
+        <div class="panel" style="text-align:center;padding:50px 24px;">
+            <div style="font-size:20px;letter-spacing:4px;color:var(--paper);margin-bottom:14px;" id="memberWho">已登录</div>
+            <p style="color:#8f8877;font-size:14px;line-height:2;letter-spacing:1px;">
+                你的账号是普通成员，只能浏览官网内容。<br>
+                如需管理权限，请联系管理员为你开通。
+            </p>
+            <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;">
+                <button class="btn" onclick="location.href='index.html'">返回官网</button>
+                <button class="btn btn-primary" id="btnSignOut2">退出登录</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理员 -->
+    <div id="viewAdmin" hidden>
+        <div class="admin-bar">
+            <div class="who">当前账号：<span id="adminWho">—</span></div>
+            <span class="badge">管理员</span>
+            <div class="spacer"></div>
+            <button class="btn" id="btnInvite">➕ 添加账号</button>
+            <button class="btn" id="btnSignOut">退出登录</button>
+        </div>
+
+        <div class="admin-tabs" data-tab-group="maintab">
+            <button type="button" data-tab="members" class="active">成员管理</button>
+            <button type="button" data-tab="posts">内容发布</button>
+            <button type="button" data-tab="invite">账号管理</button>
+        </div>
+
+        <!-- 成员管理 -->
+        <div data-tab-panel="members" data-tab-group="maintab">
+            <div class="grid-2">
+                <div>
+                    <div class="panel-title2">成 员 列 表</div>
+                    <div class="table-wrap">
+                        <table class="tbl" id="memTbl">
+                            <thead>
+                                <tr>
+                                    <th>姓名</th><th>门派</th><th>身份</th>
+                                    <th>等级</th><th>周活跃</th><th>打本</th><th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="memBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="hint">列表数据与官网「成员管理」页共用同一张数据库表，此处增删改后，官网五个页面全部同步。</p>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title2" id="formTitle">新 增 成 员</div>
+                    <form id="memberForm">
+                        <div class="form-grid">
+                            <div class="field"><label>姓名</label><input id="mName" required placeholder="如：李逍遥"></div>
+                            <div class="field"><label>武学门派</label>
+                                <select id="mSchool"></select>
+                            </div>
+                            <div class="field"><label>心法</label><input id="mXinfa" placeholder="如：太玄经"></div>
+                            <div class="field"><label>主修武器</label>
+                                <select id="mWeapon">
+                                    <option>剑</option><option>刀</option><option>伞</option><option>枪</option>
+                                    <option>扇</option><option>拳</option><option>双刀</option><option>陌刀</option><option>绳镖</option>
+                                </select>
+                            </div>
+                            <div class="field"><label>身份</label>
+                                <select id="mRole">
+                                    <option>社众</option><option>学徒</option><option>管理</option><option>副社</option><option>社长</option>
+                                </select>
+                            </div>
+                            <div class="field"><label>等级（1-100）</label><input type="number" id="mLevel" value="100" min="1" max="100"></div>
+                            <div class="field"><label>周活跃（≤8000）</label><input type="number" id="mActive" value="0" min="0" max="8000"></div>
+                            <div class="field"><label>本周在线时长（小时）</label><input type="number" id="mHours" value="0" min="0" step="0.5"></div>
+                        </div>
+
+                        <div class="form-sub-title">本 周 打 本 明 细</div>
+                        <div class="form-grid">
+                            <div class="field"><label>侠境周本（每周 ≤5）</label><input type="number" id="mRaid" value="0" min="0" max="5"></div>
+                            <div class="field"><label>百叶本</label><input type="number" id="mBaiye" value="0" min="0"></div>
+                            <div class="field"><label>百业战</label><input type="number" id="mWar" value="0" min="0"></div>
+                            <div class="field"><label>爬塔挑战</label><input type="number" id="mTower" value="0" min="0"></div>
+                            <div class="field" style="grid-column:1 / -1;">
+                                <label>近 7 日活跃点数（逗号分隔 7 个数）</label>
+                                <input id="mHistory" placeholder="如 1200,1500,1800,2000,1600,1900,2100 · 留空不记录">
+                            </div>
+                            <div class="field">
+                                <label>本周打本总次（自动合计）</label>
+                                <input id="mRunsAuto" readonly tabindex="-1" style="opacity:.6;">
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button class="btn btn-primary" type="submit" id="btnSaveMember">添 加</button>
+                            <button class="btn" type="button" id="btnCancelEdit" hidden>取 消</button>
+                        </div>
+                        <div class="msg" id="memberMsg"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 内容发布 -->
+        <div data-tab-panel="posts" data-tab-group="maintab" hidden>
+            <div class="grid-2">
+                <div>
+                    <div class="panel-title2">已 发 布 内 容</div>
+                    <div class="panel" id="postList" style="padding:6px 4px;"></div>
+                    <p class="hint">发布后立即显示在官网首页「新闻中心」，全站同步。</p>
+                </div>
+                <div class="panel">
+                    <div class="panel-title2">发 布 新 内 容</div>
+                    <form id="postForm">
+                        <div class="field"><label>分类</label>
+                            <select id="pCat"><option>公告</option><option>新闻</option><option>活动</option></select>
+                        </div>
+                        <div class="field"><label>日期（显示用）</label><input id="pDate" placeholder="如：10月21"></div>
+                        <div class="field"><label>标题</label><input id="pTitle" required placeholder="标题"></div>
+                        <div class="field"><label>副标题</label><input id="pSub" placeholder="一句话摘要（可空）"></div>
+                        <div class="form-actions">
+                            <button class="btn btn-primary" type="submit">发 布</button>
+                        </div>
+                        <div class="msg" id="postMsg"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 账号管理 -->
+        <div data-tab-panel="invite" data-tab-group="maintab" hidden>
+            <div class="grid-2">
+                <div>
+                    <div class="panel-title2">注 册 新 账 号</div>
+                    <p class="hint" style="border:none;padding-top:0;margin-top:0;">
+                        你以管理员身份创建的账号默认是普通成员；创建后可在右侧授予管理员权限。<br>
+                        本页仅管理员可见——这就是「只有管理员才能注册」的实现方式。
+                    </p>
+                    <form id="inviteForm" style="margin-top:18px;">
+                        <div class="field"><label>邮箱</label><input type="email" id="ivEmail" required placeholder="you@example.com"></div>
+                        <div class="field"><label>显示名称</label><input id="ivName" required placeholder="如：副社·问天"></div>
+                        <div class="field"><label>密码</label><input type="password" id="ivPass" required placeholder="至少 6 位"></div>
+                        <div class="form-actions">
+                            <button class="btn btn-primary" type="submit">创 建 账 号</button>
+                        </div>
+                        <div class="msg" id="inviteMsg"></div>
+                    </form>
+                </div>
+                <div>
+                    <div class="panel-title2">账 号 权 限</div>
+                    <div class="table-wrap">
+                        <table class="tbl">
+                            <thead><tr><th>账号</th><th>角色</th><th>操作</th></tr></thead>
+                            <tbody id="acctBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="hint">只有管理员能授予/收回管理员权限；被授予者即可登录本后台管理成员与内容。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="footer-bottom">
+    <div class="footer-row">
+        <span>© 2026 逍遥引 · 燕云十六声 管理后台</span>
+        <span><a href="index.html">返回官网</a></span>
+    </div>
+</div>
+
+<!-- Supabase：本地化 SDK，站点不依赖任何外部 CDN -->
+<script src="assets/vendor/supabase.min.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/db.js"></script>
+<script>
+/* ============================================================
+   管理后台逻辑
+   1) 无人是管理员时：注册入口开放（首个注册者自动成为管理员）
+   2) 已有管理员后：注册入口只出现在管理员登录后的界面
+   3) 普通成员登录：只读提示
+   ============================================================ */
+var editingMemberId = null;
+
+function show(el){ var n = document.getElementById(el); if (n) n.hidden = false; }
+function hide(el){ var n = document.getElementById(el); if (n) n.hidden = true; }
+function setMsg(id, text, kind){
+    var n = document.getElementById(id);
+    if (!n) return;
+    n.textContent = text || "";
+    n.className = "msg" + (text ? " show " + (kind || "") : "");
+}
+
+function anyAdminExists(){
+    return DB.client.from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('role', 'admin')
+        .then(function(r){ return (r.count || 0) > 0; })
+        .catch(function(){ return true; });   /* 查询失败时按“已有管理员”处理，保守放行登录 */
+}
+
+function fillSchoolSelect(){
+    var sel = document.getElementById('mSchool');
+    if (!sel || !window.YANYUN_BRANCHES) return;
+    sel.innerHTML = YANYUN_BRANCHES.map(function(b){
+        return '<option value="' + b.key + '">' + b.key + '</option>';
+    }).join('');
+}
+
+/* ---------- 视图切换 ---------- */
+/* 中性入口卡片：默认落地页，要操作时才展开登录/注册，避免对访客显得突兀 */
+var gateMode = 'login';
+function showGate(mode, sub, btnText){
+    gateMode = mode || 'login';
+    hide('viewLoading'); hide('viewAuth'); hide('viewAdmin'); hide('viewMember');
+    show('viewGate');
+    if (sub) document.getElementById('gateSub').innerHTML = sub;
+    var b = document.getElementById('btnEnterAuth');
+    b.textContent = btnText || (gateMode === 'signup' ? '创 建 管 理 员 账 号' : '登 录');
+    document.getElementById('gateHint').textContent = '';
+}
+function showAuth(mode, hint){
+    hide('viewLoading'); hide('viewGate'); hide('viewAdmin'); hide('viewMember');
+    show('viewAuth');
+    if (hint) document.getElementById('authHint').textContent = hint;
+    var tabBtn = document.querySelector('.auth-tabs [data-tab="' + mode + '"]');
+    if (tabBtn) tabBtn.click();
+}
+function showAdmin(me){
+    hide('viewLoading'); hide('viewGate'); hide('viewAuth'); hide('viewMember');
+    show('viewAdmin');
+    var label = (me && me.username) || '管理员';
+    document.getElementById('adminWho').textContent = label;
+    loadAll();
+}
+function showMember(me){
+    hide('viewLoading'); hide('viewGate'); hide('viewAuth'); hide('viewAdmin');
+    show('viewMember');
+    document.getElementById('memberWho').textContent =
+        '已登录：' + ((me && me.username) || '成员');
+}
+
+/* 入口卡片按钮 */
+document.getElementById('btnEnterAuth').addEventListener('click', function(){
+    if (gateMode === 'signup') {
+        showAuth('signup', '首个账号注册后将自动成为管理员。');
+    } else {
+        showAuth('login', '管理员登录后可管理成员与发布内容<br>普通成员无需登录，官网内容照常浏览。');
+    }
+});
+document.getElementById('btnToSite').addEventListener('click', function(){
+    location.href = 'index.html';
+});
+
+/* ---------- 启动 ---------- */
+function boot(){
+    if (!window.DB) {
+        document.getElementById('viewLoading').textContent = '数据库组件加载失败，请刷新重试';
+        return;
+    }
+    anyAdminExists().then(function(hasAdmin){
+        var signupTab = document.getElementById('tabSignup');
+        // 尚无管理员：开放注册（首个注册者成为管理员）
+        // 已有管理员：注册标签隐藏，只有管理员登录后才能创建账号
+        signupTab.hidden = hasAdmin;
+        if (!hasAdmin) {
+            document.getElementById('authSub').innerHTML =
+                '尚无管理员账号。<br>请先注册第一个账号，它将自动成为管理员。';
+            showGate('signup',
+                '尚无管理员账号。<br>点击下方按钮创建第一个管理员；<br>普通成员与访客无需登录即可浏览官网。',
+                '创 建 管 理 员 账 号');
+            return;
+        }
+        return DB.me().then(function(me){
+            if (!me) {
+                showGate('login',
+                    '此页面用于宗门管理操作。<br><strong style="color:var(--gold);">管理员</strong>可在此管理成员、发布内容<br>普通成员与访客无需登录，官网内容照常浏览',
+                    '登 录');
+                return;
+            }
+            if (me.role === 'admin') { showAdmin(me); return; }
+            showMember(me);
+        });
+    }).catch(function(e){
+        document.getElementById('viewLoading').hidden = false;
+        document.getElementById('viewLoading').textContent =
+            '数据库连接失败：' + (e && e.message ? e.message : e);
+    });
+}
+
+/* ---------- 登录 ---------- */
+document.getElementById('loginForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var msg = document.getElementById('loginMsg');
+    msg.className = 'msg';
+    var email = document.getElementById('liEmail').value.trim();
+    var pass = document.getElementById('liPass').value;
+    setMsg('loginMsg', '正在登录…');
+    DB.signIn(email, pass).then(function(){
+        return DB.me();
+    }).then(function(me){
+        if (!me) { setMsg('loginMsg', '登录成功，但未找到档案记录', 'err'); return; }
+        if (me.role !== 'admin') { showMember(me); return; }
+        setMsg('loginMsg', '', '');
+        showAdmin(me);
+    }).catch(function(err){
+        setMsg('loginMsg', '登录失败：' + (err.message || '请检查邮箱和密码'), 'err');
+    });
+});
+
+/* ---------- 首个管理员注册 ---------- */
+document.getElementById('signupForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var email = document.getElementById('suEmail').value.trim();
+    var name = document.getElementById('suName').value.trim();
+    var pass = document.getElementById('suPass').value;
+    if (pass.length < 6) { setMsg('signupMsg', '密码至少 6 位', 'err'); return; }
+    setMsg('signupMsg', '正在创建…');
+    DB.signUp(email, pass, name).then(function(res){
+        if (res && res.session) {
+            setMsg('signupMsg', '注册成功，正在进入后台…', 'ok');
+            return DB.me();
+        }
+        setMsg('signupMsg', '注册成功！若开启了邮箱验证，请先到邮箱点击确认链接后再登录。', 'ok');
+        return null;
+    }).then(function(me){
+        if (me && me.role === 'admin') showAdmin(me);
+    }).catch(function(err){
+        setMsg('signupMsg', '注册失败：' + (err.message || '未知错误'), 'err');
+    });
+});
+
+/* ---------- 退出 ---------- */
+function bindSignOut(id){
+    var b = document.getElementById(id);
+    if (b) b.addEventListener('click', function(){
+        DB.signOut().then(function(){ location.reload(); });
+    });
+}
+bindSignOut('btnSignOut');
+bindSignOut('btnSignOut2');
+</script>
+<script src="assets/schools.js"></script>
+<script>
+/* ---------- 管理员：数据加载与增删改 ---------- */
+
+function loadAll(){
+    fillSchoolSelect();
+    loadMembers();
+    loadPosts();
+    loadAccounts();
+}
+
+/* 成员列表 */
+function loadMembers(){
+    DB.listMembers().then(function(rows){
+        var tb = document.getElementById('memBody');
+        if (!rows.length) {
+            tb.innerHTML = '<tr><td colspan="7" class="empty">暂无成员，请在右侧添加</td></tr>';
+            return;
+        }
+        tb.innerHTML = rows.map(function(m){
+            return '<tr>' +
+                '<td style="color:var(--paper)">' + escapeHtml(m.name) + '</td>' +
+                '<td>' + badge(m.school, 'sc') + '</td>' +
+                '<td>' + roleTag(m.role) + '</td>' +
+                '<td>Lv.' + (m.level || 100) + '</td>' +
+                '<td style="color:var(--gold)">' + (m.active || 0) + '</td>' +
+                '<td>' + (m.runs || 0) + '</td>' +
+                '<td>' +
+                    '<button class="op" data-edit="' + m.id + '">编辑</button>' +
+                    '<button class="op danger" data-del="' + m.id + '" data-name="' + escapeHtml(m.name) + '">删除</button>' +
+                '</td>' +
+            '</tr>';
+        }).join('');
+    }).catch(function(e){
+        document.getElementById('memBody').innerHTML =
+            '<tr><td colspan="7" class="empty">读取失败：' + escapeHtml(e.message) + '</td></tr>';
+    });
+}
+
+function badge(key, prefix){
+    if (!key) return '—';
+    var id = '';
+    if (window.YANYUN_BRANCH_BY_KEY && YANYUN_BRANCH_BY_KEY[key]) id = YANYUN_BRANCH_BY_KEY[key].schoolId;
+    return '<span class="mem-school ' + (id ? prefix + '-' + id : '') + '">' + escapeHtml(key) + '</span>';
+}
+function roleTag(r){
+    return '<span class="role-tag role-' + escapeHtml(r || '社众') + '">' + escapeHtml(r || '社众') + '</span>';
+}
+function escapeHtml(s){
+    return String(s == null ? '' : s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* 近7日活跃：逗号/空格分隔的 7 个数字 */
+function parseHistory(txt){
+    var arr = String(txt || '').split(/[,，\s]+/)
+        .map(function(x){ return parseInt(x, 10); })
+        .filter(function(x){ return isFinite(x) && x >= 0; })
+        .slice(0, 7);
+    while (arr.length < 7) arr.push(0);
+    return arr;
+}
+/* 打本总数 = 侠境周本 + 百叶本 + 百业战 + 爬塔，自动合计 */
+function updateRunsAuto(){
+    var sum = ['mRaid','mBaiye','mWar','mTower'].reduce(function(s, id){
+        var el = document.getElementById(id);
+        return s + (el ? (Math.max(0, parseInt(el.value, 10) || 0)) : 0);
+    }, 0);
+    var out = document.getElementById('mRunsAuto');
+    if (out) out.value = sum;
+}
+['mRaid','mBaiye','mWar','mTower'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateRunsAuto);
+});
+
+/* 新增 / 编辑成员 */
+document.getElementById('memberForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var raid  = Math.max(0, Math.min(5, parseInt(document.getElementById('mRaid').value, 10) || 0));
+    var baiye = Math.max(0, parseInt(document.getElementById('mBaiye').value, 10) || 0);
+    var war   = Math.max(0, parseInt(document.getElementById('mWar').value, 10) || 0);
+    var tower = Math.max(0, parseInt(document.getElementById('mTower').value, 10) || 0);
+    var payload = {
+        name: document.getElementById('mName').value.trim(),
+        school: document.getElementById('mSchool').value,
+        xinfa: document.getElementById('mXinfa').value.trim(),
+        weapon: document.getElementById('mWeapon').value,
+        role: document.getElementById('mRole').value,
+        level: Math.min(100, Math.max(1, parseInt(document.getElementById('mLevel').value, 10) || 100)),
+        active: Math.min(8000, Math.max(0, parseInt(document.getElementById('mActive').value, 10) || 0)),
+        hours_week: Math.max(0, parseFloat(document.getElementById('mHours').value) || 0),
+        runs_raid: raid,
+        runs_baiye: baiye,
+        runs_war: war,
+        runs_tower: tower,
+        runs: raid + baiye + war + tower,
+        active_history: parseHistory(document.getElementById('mHistory').value),
+        online: false,
+        last_login: '—',
+    };
+    if (!payload.name) { setMsg('memberMsg', '请填写姓名', 'err'); return; }
+
+    var op = editingMemberId
+        ? DB.updateMember(editingMemberId, payload)
+        : DB.addMember(payload);
+
+    setMsg('memberMsg', editingMemberId ? '正在保存…' : '正在添加…');
+    op.then(function(){
+        setMsg('memberMsg', editingMemberId ? '已保存' : '已添加成员', 'ok');
+        resetMemberForm();
+        loadMembers();
+    }).catch(function(err){
+        setMsg('memberMsg', '失败：' + (err.message || '权限不足') +
+            (err.status === 401 || err.status === 403 ? '（请确认你已登录且为管理员）' : ''), 'err');
+    });
+});
+
+function resetMemberForm(){
+    editingMemberId = null;
+    document.getElementById('memberForm').reset();
+    document.getElementById('formTitle').textContent = '新 增 成 员';
+    document.getElementById('btnSaveMember').textContent = '添 加';
+    document.getElementById('btnCancelEdit').hidden = true;
+    var lv = document.getElementById('mLevel'); if (lv) lv.value = 100;
+    updateRunsAuto();
+}
+
+document.getElementById('btnCancelEdit').addEventListener('click', resetMemberForm);
+
+document.getElementById('memBody').addEventListener('click', function(e){
+    var ed = e.target.closest('[data-edit]');
+    var del = e.target.closest('[data-del]');
+    if (ed) {
+        var id = Number(ed.getAttribute('data-edit'));
+        DB.client.from('members').select('*').eq('id', id).single().then(function(r){
+            var m = r.data; if (!m) return;
+            editingMemberId = m.id;
+            document.getElementById('formTitle').textContent = '编 辑 成 员';
+            document.getElementById('btnSaveMember').textContent = '保 存';
+            document.getElementById('btnCancelEdit').hidden = false;
+            document.getElementById('mName').value = m.name || '';
+            document.getElementById('mSchool').value = m.school || '';
+            document.getElementById('mXinfa').value = m.xinfa || '';
+            document.getElementById('mWeapon').value = m.weapon || '剑';
+            document.getElementById('mRole').value = m.role || '社众';
+            document.getElementById('mLevel').value = m.level || 100;
+            document.getElementById('mActive').value = m.active || 0;
+            document.getElementById('mHours').value = m.hours_week || 0;
+            document.getElementById('mRaid').value = m.runs_raid || 0;
+            document.getElementById('mBaiye').value = m.runs_baiye || 0;
+            document.getElementById('mWar').value = m.runs_war || 0;
+            document.getElementById('mTower').value = m.runs_tower || 0;
+            document.getElementById('mHistory').value =
+                (Array.isArray(m.active_history) && m.active_history.length)
+                    ? m.active_history.join(',') : '';
+            updateRunsAuto();
+            document.getElementById('memberMsg').className = 'msg';
+            document.getElementById('memberForm').scrollIntoView({ behavior:'smooth', block:'center' });
+        });
+        return;
+    }
+    if (del) {
+        var mid = Number(del.getAttribute('data-del'));
+        var nm = del.getAttribute('data-name') || '';
+        if (!confirm('确认删除成员「' + nm + '」？此操作会同步影响官网所有页面。')) return;
+        DB.deleteMember(mid).then(function(){
+            loadMembers();
+        }).catch(function(err){
+            setMsg('memberMsg', '删除失败：' + (err.message || '权限不足'), 'err');
+        });
+    }
+});
+
+/* ---------- 内容发布 ---------- */
+function loadPosts(){
+    DB.listPosts().then(function(rows){
+        var box = document.getElementById('postList');
+        if (!rows.length) {
+            box.innerHTML = '<div class="empty">暂无内容，右侧可发布</div>';
+            return;
+        }
+        box.innerHTML = rows.map(function(p){
+            return '<div class="post-item">' +
+                '<span class="cat cat-' + escapeHtml(p.category) + '">' + escapeHtml(p.category) + '</span>' +
+                '<div class="pi-main">' +
+                    '<div class="pi-title">' + escapeHtml(p.title) + '</div>' +
+                    '<div class="pi-sub">' + escapeHtml(p.post_date || '') +
+                        (p.subtitle ? ' · ' + escapeHtml(p.subtitle) : '') + '</div>' +
+                '</div>' +
+                '<button class="op danger" data-delpost="' + p.id + '">删除</button>' +
+            '</div>';
+        }).join('');
+    }).catch(function(e){
+        document.getElementById('postList').innerHTML =
+            '<div class="empty">读取失败：' + escapeHtml(e.message) + '</div>';
+    });
+}
+
+document.getElementById('postForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var title = document.getElementById('pTitle').value.trim();
+    if (!title) { setMsg('postMsg', '请填写标题', 'err'); return; }
+    var row = {
+        category: document.getElementById('pCat').value,
+        post_date: document.getElementById('pDate').value.trim(),
+        title: title,
+        subtitle: document.getElementById('pSub').value.trim() || null,
+    };
+    setMsg('postMsg', '正在发布…');
+    DB.addPost(row).then(function(){
+        setMsg('postMsg', '已发布，官网首页新闻区已同步', 'ok');
+        document.getElementById('postForm').reset();
+        loadPosts();
+    }).catch(function(err){
+        setMsg('postMsg', '发布失败：' + (err.message || '权限不足'), 'err');
+    });
+});
+
+document.getElementById('postList').addEventListener('click', function(e){
+    var b = e.target.closest('[data-delpost]');
+    if (!b) return;
+    if (!confirm('确认删除这条内容？官网将同步移除。')) return;
+    DB.deletePost(Number(b.getAttribute('data-delpost'))).then(loadPosts)
+        .catch(function(err){ alert('删除失败：' + (err.message || '权限不足')); });
+});
+
+/* ---------- 账号管理（注册 + 授权管理员） ---------- */
+function loadAccounts(){
+    DB.client.from('profiles').select('id,username,role')
+        .order('created_at', { ascending: true })
+        .then(function(r){
+            if (r.error) throw r.error;
+            var rows = r.data || [];
+            var tb = document.getElementById('acctBody');
+            if (!rows.length) {
+                tb.innerHTML = '<tr><td colspan="3" class="empty">暂无账号</td></tr>';
+                return;
+            }
+            tb.innerHTML = rows.map(function(a){
+                var isMe = '';
+                return '<tr>' +
+                    '<td style="color:var(--paper)">' + escapeHtml(a.username || a.id.slice(0,8)) + '</td>' +
+                    '<td>' + roleTag(a.role === 'admin' ? '管理' : '社众') +
+                        (a.role === 'admin' ? ' <span style="color:#7a7464;font-size:11px;">admin</span>' : '') + '</td>' +
+                    '<td>' +
+                        (a.role === 'admin'
+                            ? '<button class="op" disabled title="至少保留一名管理员">已是管理员</button>'
+                            : '<button class="op" data-promote="' + a.id + '">设为管理员</button>') +
+                    '</td>' +
+                '</tr>';
+            }).join('');
+        }).catch(function(e){
+            document.getElementById('acctBody').innerHTML =
+                '<tr><td colspan="3" class="empty">' + escapeHtml(e.message) + '</td></tr>';
+        });
+}
+
+document.getElementById('btnInvite').addEventListener('click', function(){
+    document.querySelector('[data-tab="invite"]').click();
+    document.querySelector('[data-tab="invite"]').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+document.getElementById('inviteForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var email = document.getElementById('ivEmail').value.trim();
+    var name = document.getElementById('ivName').value.trim();
+    var pass = document.getElementById('ivPass').value;
+    if (pass.length < 6) { setMsg('inviteMsg', '密码至少 6 位', 'err'); return; }
+    setMsg('inviteMsg', '正在创建账号…');
+    DB.signUp(email, pass, name).then(function(){
+        setMsg('inviteMsg', '账号已创建。若开启了邮箱验证，需对方先点击邮箱确认链接才能登录。', 'ok');
+        document.getElementById('inviteForm').reset();
+        setTimeout(loadAccounts, 1200);
+    }).catch(function(err){
+        setMsg('inviteMsg', '创建失败：' + (err.message || '未知错误'), 'err');
+    });
+});
+
+document.getElementById('acctBody').addEventListener('click', function(e){
+    var b = e.target.closest('[data-promote]');
+    if (!b) return;
+    var uid = b.getAttribute('data-promote');
+    if (!confirm('确认将该账号设为管理员？对方将可以管理成员和发布内容。')) return;
+    DB.client.from('profiles').update({ role: 'admin' }).eq('id', uid)
+        .then(function(r){
+            if (r.error) throw r.error;
+            loadAccounts();
+        })
+        .catch(function(err){
+            alert('设置失败：' + (err.message || '权限不足'));
+        });
+});
+
+/* ---------- 启动 ---------- */
+document.addEventListener('DOMContentLoaded', boot);
+if (document.readyState !== 'loading') boot();
+</script>
+<script src="assets/base.js" defer></script>
+</body>
+</html>

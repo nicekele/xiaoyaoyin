@@ -6,3 +6,6 @@ __pycache__/
 
 # 音频压缩前的原始备份，不进仓库
 assets/audio/_original/
+
+# 流派图缩放前的原始备份，不进仓库
+assets/武学流派/_original/

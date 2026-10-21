@@ -84,6 +84,20 @@
             content: attr(data-val); position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
             font-size: 12px; color: var(--gold); font-weight: bold; white-space: nowrap;
         }
+        /* 数据为空时的占位提示（grid 子项需跨满整行） */
+        .empty-inline {
+            grid-column: 1 / -1;
+            text-align: center; color: #7a7464;
+            padding: 34px 18px;
+            font-size: 14px; letter-spacing: 2px; line-height: 2;
+        }
+        .empty-inline span {
+            display: block;
+            font-size: 12px; color: #5f5a4e; letter-spacing: 1px; margin-top: 4px;
+        }
+        .rank-list .empty-inline,
+        .donut-legend .empty-inline,
+        .act-tbl .empty-inline { grid-column: auto; }
         .bar-label { margin-top: 12px; font-size: 13px; color: #b0a892; letter-spacing: 1px; }
         .bar-legend {
             display: flex; gap: 22px; justify-content: center; margin-top: 14px;
@@ -232,7 +246,8 @@
                 <li><a href="runs.html">打本统计</a></li>
                 <li><a href="index.html#sect">宗门法规</a></li>
                 <li><a href="index.html#news">新闻</a></li>
-            </ul>
+                        <li><a href="admin.html">管理后台</a></li>
+</ul>
         </div>
         <button class="nav-toggle" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="navMenu">
             <span></span><span></span><span></span>
@@ -249,7 +264,9 @@
             <h1 class="page-cn">活 跃 度 统 计</h1>
         </div>
 
-        <div class="range-tabs" data-tab-group="period">
+        <!-- 数据口径：当前周快照（members 表）。原本的「本周/上周/本月/赛季」切换已移除，
+             因为数据库没有历史数据，切换只会显示假数据。 -->
+        <div class="range-tabs" aria-hidden="true" hidden>
             <button class="range-tab" data-tab="this">本周</button>
             <button class="range-tab active" data-tab="last">上周</button>
             <button class="range-tab" data-tab="m">本月</button>
@@ -344,281 +361,242 @@
         </div>
     </div>
 
+<script src="assets/vendor/supabase.min.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/db.js"></script>
 <script src="assets/schools.js"></script>
 <script>
-/* ========== 人名池（各榜单共用） ========== */
-const days = ["周一","周二","周三","周四","周五","周六","周日"];
-const firstNames = ["李","上官","慕容","独孤","林","叶","顾","沈","萧","云","楚","风","陆","方","苏","南宫"];
-const givenNames = ["逍遥","问天","无忌","云轩","清风","惊鸿","逸尘","长夜","长歌","慕白","飞鸿","雪琪","灵儿","若曦","听雨","忘机","无言","天行","九歌","潇湘"];
-function hashStr(s){ let h=0; for(const c of s) h=(h*31+c.charCodeAt(0))&0x7fffffff; return h; }
-
-const WEAPONS = ["剑","刀","伞","枪","扇","拳","双刀","陌刀","绳镖"];
+/* ============================================================
+   活跃度统计 —— 数据全部来自 members 表（当前周快照）
+   移除「本周/上周/本月/赛季」时间切换：数据库只存当前快照，
+   没有历史数据，切换只会显示假数据。
+   移除同比箭头（↑6.8% 之类）：同样无历史可比，不编造。
+   ============================================================ */
 const TOTAL_MEMBERS = 100;
 
-/* 周活跃分档的中值（用于由分段人数反推总活跃点数）
-   5000+ 档受「周活跃上限 8000」约束，故中值取 6400 */
-const BAND_MID = [6400, 4000, 2000, 750, 250];
-
-/* ========== 各时间范围的数据 ==========
-   seg      = 5 档人数，合计必须等于 TOTAL_MEMBERS（100）
-   scale    = 分档阈值相对「周」的倍数（月 4.3 倍 / 赛季 13 倍）
-   bands    = 该周期下的分档文案
-   weights  = 柱状图各点的相对权重，合计由 seg 反推，保证
-              「总活跃点数 / 柱状图 / 环形图 / 概览卡」四者永远自洽 */
-const PERIODS = {
-    this: {
-        title: "近 7 日 宗 门 总 活 跃 走 势",
-        sub: "本周进行中 · 单位：活跃点数",
-        labels: days,
-        weights: [51200, 47800, 55600, 58900, 71200, 88400, 64200],
-        seg: [48, 31, 12, 5, 4],
-        scale: 1,
-        bands: ["5000+ 活跃 (含月卡档)", "3000-4999 活跃 (含6元档)", "1000-2999 潜力成员", "500-999 低频成员", "0-499 需唤醒成员"],
-        passLabel: "达 标 人 数 (5000+)", activeLabel: "活 跃 成 员 (3000+)", lowLabel: "潜 力 成 员 (低于1000)", segSub: "按周活跃点数分段",
-        topBase: 7860, topDelta: 118, topSub: "本周活跃点数排行",
-        daysMax: 7, topNote: ["连续 7 天", "全勤", "持续在线"],
-        sumDelta: ["up", "↑ 3.4%"], passDelta: ["up", "↑ 2.7%"],
-        activeDelta: ["up", "↑ 1.6%"], lowDelta: ["down", "↓ 2 人"],
-    },
-    last: {
-        title: "近 7 日 宗 门 总 活 跃 走 势",
-        sub: "单位：活跃点数 / 每日 24:00 更新",
-        labels: days,
-        weights: [82040, 73320, 85840, 78060, 94780, 115980, 92320],
-        seg: [45, 29, 14, 8, 4],
-        scale: 1,
-        bands: ["5000+ 活跃 (含月卡档)", "3000-4999 活跃 (含6元档)", "1000-2999 潜力成员", "500-999 低频成员", "0-499 需唤醒成员"],
-        passLabel: "达 标 人 数 (5000+)", activeLabel: "活 跃 成 员 (3000+)", lowLabel: "潜 力 成 员 (低于1000)", segSub: "按周活跃点数分段",
-        topBase: 7980, topDelta: 160, topSub: "周活跃点数排行",
-        daysMax: 7, topNote: ["连续 4 周", "连续", "首次"],
-        sumDelta: ["up", "↑ 6.8%"], passDelta: ["up", "↑ 4.1%"],
-        activeDelta: ["up", "↑ 2.3%"], lowDelta: ["down", "↓ 1 人"],
-    },
-    m: {
-        title: "近 7 周 宗 门 总 活 跃 走 势",
-        sub: "本月 · 单位：周活跃点数",
-        labels: ["1周","2周","3周","4周","5周","6周","本周"],
-        weights: [498000, 534000, 561000, 587000, 602000, 641000, 622000],
-        seg: [43, 29, 16, 9, 3],
-        scale: 4.3,
-        bands: ["20000+ 活跃 (含128元档)", "12000-19999 活跃", "4000-11999 潜力成员", "1000-3999 低频成员", "0-999 需唤醒成员"],
-        passLabel: "达 标 人 数 (20000+)", activeLabel: "活 跃 成 员 (12000+)", lowLabel: "潜 力 成 员 (低于4000)", segSub: "按月活跃点数分段",
-        topBase: 24180, topDelta: 420, topSub: "本月活跃点数排行",
-        daysMax: 30, topNote: ["连续 3 周", "连续", "首次"],
-        sumDelta: ["up", "↑ 5.4%"], passDelta: ["up", "↑ 3.2%"],
-        activeDelta: ["up", "↑ 1.9%"], lowDelta: ["up", "↓ 3 人"],
-    },
-    lm: {
-        title: "近 7 周 宗 门 总 活 跃 走 势",
-        sub: "上月 · 单位：周活跃点数",
-        labels: ["1周","2周","3周","4周","5周","6周","7周"],
-        weights: [462000, 489000, 513000, 548000, 571000, 596000, 604000],
-        seg: [41, 28, 16, 9, 6],
-        scale: 4.3,
-        bands: ["20000+ 活跃 (含128元档)", "12000-19999 活跃", "4000-11999 潜力成员", "1000-3999 低频成员", "0-999 需唤醒成员"],
-        passLabel: "达 标 人 数 (20000+)", activeLabel: "活 跃 成 员 (12000+)", lowLabel: "潜 力 成 员 (低于4000)", segSub: "按月活跃点数分段",
-        topBase: 23040, topDelta: 460, topSub: "上月活跃点数排行",
-        daysMax: 31, topNote: ["连续 2 周", "连续", "首次"],
-        sumDelta: ["down", "↓ 1.2%"], passDelta: ["down", "↓ 0.8%"],
-        activeDelta: ["up", "↑ 0.7%"], lowDelta: ["up", "↓ 2 人"],
-    },
-    season: {
-        title: "近 7 赛段 宗 门 总 活 跃 走 势",
-        sub: "本赛季 · 单位：赛段活跃点数",
-        labels: ["赛1","赛2","赛3","赛4","赛5","赛6","赛7"],
-        weights: [1620000, 1745000, 1830000, 1902000, 1988000, 2064000, 2118000],
-        seg: [58, 26, 9, 5, 2],
-        scale: 13,
-        bands: ["60000+ 活跃", "36000-59999 活跃", "12000-35999 潜力成员", "3000-11999 低频成员", "0-2999 需唤醒成员"],
-        passLabel: "达 标 人 数 (60000+)", activeLabel: "活 跃 成 员 (36000+)", lowLabel: "潜 力 成 员 (低于12000)", segSub: "按赛季活跃点数分段",
-        topBase: 68420, topDelta: 1180, topSub: "赛季活跃点数排行",
-        daysMax: 90, topNote: ["全程", "连续", "首次"],
-        sumDelta: ["up", "↑ 11.7%"], passDelta: ["up", "↑ 8.4%"],
-        activeDelta: ["up", "↑ 4.2%"], lowDelta: ["up", "↓ 5 人"],
-    },
-};
-
+/* 周活跃分档（与宗门奖励机制一致：5000+ 月卡档、3000+ 6元档） */
+const SEG_LABELS = [
+    "5000+ 活跃 (含月卡档)",
+    "3000-4999 活跃 (含6元档)",
+    "1000-2999 潜力成员",
+    "500-999 低频成员",
+    "0-499 需唤醒成员",
+];
 const SEG_COLORS = ["var(--gold)", "var(--jade-light)", "#6aa0e0", "var(--red-light)", "#666"];
+const DAYS7 = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 
-/* 由分段反推该周期的总活跃点数 */
-function calcSum(p){
-    return Math.round(p.seg.reduce((s, c, i) => s + c * BAND_MID[i], 0) * p.scale);
+function esc(s){
+    return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
-
-/* 各门派人数与「上周」基准平均活跃
-   顺序与 assets/schools.js 的 YANYUN_BRANCHES 一致
-   人数合计 100 = 宗门总人数 */
-const SCHOOL_CNT  = [13, 10,  9,  9,  6, 10,  9, 10,  9,  8,  7];
-const SCHOOL_AVG0 = [5600, 5837, 4909, 4653, 4298, 4811, 4456, 5047, 4614, 4318, 3963];
-// 基准加权平均：门派榜缩放系数由「人均 / 基准加权均」推出，保证与概览卡一致
-const SCHOOL_W0 = SCHOOL_CNT.reduce((s, c, i) => s + c * SCHOOL_AVG0[i], 0) / 100;
-
-/* ========== 渲染器 ========== */
-function renderBars(p, total){
-    const el = document.getElementById("barchart");
-    if (!el) return;
-    const wsum = p.weights.reduce((a,b)=>a+b, 0);
-    const vals = p.weights.map(w => Math.round(total * w / wsum));
-    vals[vals.length - 1] += total - vals.reduce((a,b)=>a+b, 0); // 吸收取整误差
-    const max = Math.max(...vals) * 1.1;
-    el.innerHTML = vals.map((v,i)=>{
-        const h = Math.round(v / max * 220);
-        const show = v >= 100000 ? (v/10000).toFixed(0)+"万" : (v/10000).toFixed(1)+"万";
-        return `<div class="bar-col">
-            <div class="bar" data-val="${show}" style="height:${h}px;"></div>
-            <div class="bar-label">${p.labels[i]}</div>
-        </div>`;
-    }).join("");
+function fmt(n){
+    return Number(n || 0).toLocaleString("en-US");
 }
-
-function renderTop(p){
-    const el = document.getElementById("rankList");
-    if (!el) return;
-    const list = [];
-    for (let i=0;i<10;i++){
-        let n;
-        do { n = firstNames[Math.floor(Math.random()*firstNames.length)] + givenNames[Math.floor(Math.random()*givenNames.length)]; }
-        while (list.find(x=>x.name===n));
-        list.push({ name: n });
-    }
-    const weaponPool = WEAPONS;
-    list.forEach((r,i)=>{
-        const s = hashStr(r.name);
-        r.score = Math.round(p.topBase - i * p.topDelta - (s % 100));
-        r.days = Math.max(1, p.daysMax - Math.floor(i/4));
-        r.weapon = weaponPool[s % weaponPool.length];
-    });
-    const top = list[0].score;
-    el.innerHTML = list.map((r,i)=>{
-        const initial = r.name.slice(0, 2);
-        const pct = Math.round(r.score / top * 100);
-        const note = i === 0 ? p.topNote[0] : (i < 3 ? p.topNote[1] : p.topNote[2]);
-        return `<div class="rank-item rank-${i+1}">
-            <div class="rank-no">${i+1}</div>
-            <div>
-                <span class="rank-avatar">${initial}</span>
-                <span class="rank-name">${r.name}</span>
-                <span class="w-tag w-${r.weapon}" style="margin-left:8px;padding:1px 7px;font-size:11px;">${r.weapon}</span>
-                <div class="rank-info">活跃天数 ${r.days} / ${p.daysMax} 天 · 登榜 ${note}</div>
-            </div>
-            <div class="rank-bar"><span style="width:${pct}%;"></span></div>
-            <div class="rank-val">${r.score.toLocaleString()}<small>点</small></div>
-        </div>`;
-    }).join("");
-}
-
-function renderDonut(seg, bands){
-    const total = seg.reduce((a,b)=>a+b, 0);
-    const pct = seg.map(v => v / total * 100);
-    let acc = 0;
-    const stops = pct.map((pc, i) => {
-        const from = acc; acc += pc;
-        return `${SEG_COLORS[i]} ${from.toFixed(2)}% ${acc.toFixed(2)}%`;
-    }).join(", ");
-    const donut = document.getElementById("actDonut");
-    if (donut) donut.style.background = `conic-gradient(${stops})`;
-    const totalEl = document.getElementById("donutTotal");
-    if (totalEl) totalEl.textContent = TOTAL_MEMBERS;
-
-    const lg = document.getElementById("donutLegend");
-    if (lg) {
-        lg.innerHTML = seg.map((v,i)=>{
-            const pc = (v / total * 100).toFixed(1);
-            return `<div class="dl-row">
-                <span class="dl-color" style="background:${SEG_COLORS[i]}"></span>
-                <span class="dl-name">${(bands && bands[i]) || ""}</span>
-                <span class="dl-val">${v} 人 <small>${pc}%</small></span>
-            </div>`;
-        }).join("");
-    }
-    return { total, pct };
-}
-
-function renderSchoolBoard(scale){
-    const el = document.getElementById("actTbl");
-    if (!el) return;
-    const branches = window.YANYUN_BRANCHES || [];
-    if (!branches.length) {
-        el.innerHTML = `<tbody><tr><td style="padding:24px;color:#8f8877;">门派数据加载失败</td></tr></tbody>`;
-        return;
-    }
-    const data = branches.map((b, i) => {
-        const avg = Math.round((SCHOOL_AVG0[i] || 4000) * scale);
-        const cnt = SCHOOL_CNT[i] || 10;
-        return { key: b.key, schoolId: b.schoolId, cnt, avg, total: avg * cnt };
-    }).sort((x, y) => y.avg - x.avg);
-    const maxAvg = Math.max(...data.map(x => x.avg));
-    el.innerHTML = `
-    <thead><tr><th>排名</th><th>门派</th><th>人数</th><th>平均活跃</th><th>总点数</th><th style="width:28%;">对比最高</th></tr></thead>
-    <tbody>${data.map((x, idx)=>{
-        const pc = Math.round(x.avg / maxAvg * 100);
-        return `<tr>
-            <td><strong style="color:var(--paper);">#${idx+1}</strong></td>
-            <td><span class="mem-school sc-${x.schoolId}">${x.key}</span></td>
-            <td style="color:#b5ad99;">${x.cnt} <span style="color:#666;font-size:12px;">人</span></td>
-            <td style="color:var(--gold);font-weight:bold;">${x.avg.toLocaleString()}</td>
-            <td style="color:#d4c9b3;">${x.total.toLocaleString()}</td>
-            <td><span class="mbar"><span style="width:${pc}%;"></span></span> <span style="display:inline-block;margin-left:10px;font-size:13px;color:#888;">${pc}%</span></td>
-        </tr>`;
-    }).join("")}</tbody>`;
-}
-
 function setNum(id, value){
     const el = document.getElementById(id);
     if (!el) return;
     el.setAttribute("data-count", value);
-    el.textContent = Number(value).toLocaleString("en-US");
+    el.textContent = fmt(value);
 }
 function setText(id, html){
     const el = document.getElementById(id);
     if (el) el.innerHTML = html;
 }
-function deltaHtml(pair){
-    return `<span class="${pair[0]}">${pair[1]}</span>`;
+function schoolIdOf(key){
+    const b = (window.YANYUN_BRANCH_BY_KEY || {})[key];
+    return b ? b.schoolId : "";
+}
+function emptyBox(text, sub){
+    return `<div class="empty-inline">${esc(text)}${sub ? "<span>" + esc(sub) + "</span>" : ""}</div>`;
 }
 
-function applyPeriod(key){
-    const p = PERIODS[key] || PERIODS.last;
-    const sum = calcSum(p);
-    renderBars(p, sum);
-    const seg = p.seg;
+/* ---------- 从成员快照聚合出本页所有指标 ---------- */
+function aggregate(rows){
+    const total = rows.length;
+    const sumActive = rows.reduce((s, m) => s + (Number(m.active) || 0), 0);
 
-    // 概览：全部由同一份 seg 推导，与环形图不可能再打架
-    const pass = seg[0];
-    const active = seg[0] + seg[1];
-    const low = seg[3] + seg[4];
-    const avg = Math.round(sum / TOTAL_MEMBERS);
+    const seg = [0, 0, 0, 0, 0];
+    rows.forEach(m => {
+        const a = Number(m.active) || 0;
+        if (a >= 5000) seg[0]++;
+        else if (a >= 3000) seg[1]++;
+        else if (a >= 1000) seg[2]++;
+        else if (a >= 500) seg[3]++;
+        else seg[4]++;
+    });
 
-    setNum("sumAct", sum);
-    setNum("passCnt", pass);
-    setNum("activeCnt", active);
-    setNum("lowCnt", low);
+    const bars = [0, 0, 0, 0, 0, 0, 0];
+    let hasHistory = false;
+    rows.forEach(m => {
+        const h = Array.isArray(m.active_history) ? m.active_history : [];
+        if (h.some(v => Number(v) > 0)) hasHistory = true;
+        for (let i = 0; i < 7; i++) bars[i] += Number(h[i]) || 0;
+    });
 
-    setText("passLabel", p.passLabel);
-    setText("activeLabel", p.activeLabel);
-    setText("lowLabel", p.lowLabel);
-    setText("segSub", p.segSub);
-    setText("sumActSub", `<span>人均 ${avg.toLocaleString()}</span>${deltaHtml(p.sumDelta)}`);
-    setText("passCntSub", `<span>达标率 ${(pass/TOTAL_MEMBERS*100).toFixed(1)}%</span>${deltaHtml(p.passDelta)}`);
-    setText("activeCntSub", `<span>活跃率 ${(active/TOTAL_MEMBERS*100).toFixed(0)}%</span>${deltaHtml(p.activeDelta)}`);
-    setText("lowCntSub", `<span>待唤醒</span>${deltaHtml(p.lowDelta)}`);
+    const bySchool = {};
+    rows.forEach(m => {
+        const k = m.school || "未分派";
+        if (!bySchool[k]) bySchool[k] = { key: k, cnt: 0, total: 0 };
+        bySchool[k].cnt++;
+        bySchool[k].total += (Number(m.active) || 0);
+    });
+    const schools = Object.keys(bySchool)
+        .map(k => bySchool[k])
+        .map(x => ({ key: x.key, cnt: x.cnt, total: x.total, avg: x.cnt ? Math.round(x.total / x.cnt) : 0 }))
+        .sort((a, b) => b.avg - a.avg);
 
-    setText("trendTitle", p.title);
-    setText("trendSub", p.sub);
-    setText("topSub", p.topSub);
-
-    renderTop(p);
-    renderDonut(seg, p.bands);
-    // 门派榜缩放系数 = 人均 / 基准加权均，使榜单加权平均恒等于概览「人均」
-    renderSchoolBoard((sum / TOTAL_MEMBERS) / SCHOOL_W0);
+    return { total, sumActive, seg, bars, hasHistory, schools };
 }
 
-// base.js 在 tab 切换时派发 tabchange 事件
-document.addEventListener("tabchange", function(e){
-    if (e.detail.group === "period") applyPeriod(e.detail.tab);
-});
+/* ---------- 各区块渲染 ---------- */
+function renderBars7(bars, hasHistory){
+    const el = document.getElementById("barchart");
+    if (!el) return;
+    const sum = bars.reduce((a, b) => a + b, 0);
+    if (!hasHistory || sum <= 0) {
+        el.innerHTML = emptyBox("尚无近 7 日活跃记录",
+            "在管理后台为成员填写「近 7 日活跃点数」后，这里会显示走势");
+        return;
+    }
+    const max = Math.max(...bars) * 1.1 || 1;
+    el.innerHTML = bars.map((v, i) => {
+        const h = Math.max(4, Math.round(v / max * 220));
+        const show = v >= 10000 ? (v / 10000).toFixed(0) + "万" : (v / 10000).toFixed(1) + "万";
+        return `<div class="bar-col">
+            <div class="bar" data-val="${show}" style="height:${h}px;"></div>
+            <div class="bar-label">${DAYS7[i]}</div>
+        </div>`;
+    }).join("");
+}
 
-applyPeriod("last");
+function renderTop10(rows){
+    const el = document.getElementById("rankList");
+    if (!el) return;
+    const list = rows
+        .filter(m => (Number(m.active) || 0) > 0)
+        .sort((a, b) => (Number(b.active) || 0) - (Number(a.active) || 0))
+        .slice(0, 10);
+    if (!list.length) {
+        el.innerHTML = emptyBox("暂无活跃数据", "成员在后台录入周活跃后显示排名");
+        return;
+    }
+    const top = Number(list[0].active) || 1;
+    el.innerHTML = list.map((m, i) => {
+        const initial = (m.name || "").slice(0, 2);
+        const score = Number(m.active) || 0;
+        const pct = Math.round(score / top * 100);
+        const wpn = m.weapon || "";
+        const meta = [m.school, wpn].filter(Boolean).map(esc).join(" · ");
+        return `<div class="rank-item rank-${i + 1}">
+            <div class="rank-no">${i + 1}</div>
+            <div>
+                <span class="rank-avatar">${esc(initial)}</span>
+                <span class="rank-name">${esc(m.name)}</span>
+                ${wpn ? `<span class="w-tag w-${wpn}" style="margin-left:8px;padding:1px 7px;font-size:11px;">${esc(wpn)}</span>` : ""}
+                <div class="rank-info">${meta || "—"}</div>
+            </div>
+            <div class="rank-bar"><span style="width:${pct}%;"></span></div>
+            <div class="rank-val">${score.toLocaleString()}<small>点</small></div>
+        </div>`;
+    }).join("");
+}
+
+function renderDonut(seg, bands){
+    const total = seg.reduce((a, b) => a + b, 0);
+    const donut = document.getElementById("actDonut");
+    const totalEl = document.getElementById("donutTotal");
+    const lg = document.getElementById("donutLegend");
+
+    if (totalEl) totalEl.textContent = total;
+
+    if (!total) {
+        if (donut) donut.style.background = "conic-gradient(#1a1714 0% 100%)";
+        if (lg) lg.innerHTML = emptyBox("暂无成员数据");
+        return;
+    }
+    let acc = 0;
+    const stops = seg.map((v, i) => {
+        const pc = v / total * 100;
+        const from = acc; acc += pc;
+        return `${SEG_COLORS[i]} ${from.toFixed(2)}% ${acc.toFixed(2)}%`;
+    }).join(", ");
+    if (donut) donut.style.background = `conic-gradient(${stops})`;
+    if (lg) {
+        lg.innerHTML = seg.map((v, i) => {
+            const pc = (v / total * 100).toFixed(1);
+            return `<div class="dl-row">
+                <span class="dl-color" style="background:${SEG_COLORS[i]}"></span>
+                <span class="dl-name">${esc(bands[i])}</span>
+                <span class="dl-val">${v} 人 <small>${pc}%</small></span>
+            </div>`;
+        }).join("");
+    }
+}
+
+function renderSchoolBoard(schools){
+    const el = document.getElementById("actTbl");
+    if (!el) return;
+    if (!schools.length) {
+        el.innerHTML = `<tbody><tr><td colspan="6" class="empty-inline">暂无成员</td></tr></tbody>`;
+        return;
+    }
+    const maxAvg = Math.max(...schools.map(x => x.avg), 1);
+    el.innerHTML = `
+    <thead><tr><th>排名</th><th>门派</th><th>人数</th><th>平均活跃</th><th>总点数</th><th style="width:28%;">对比最高</th></tr></thead>
+    <tbody>${schools.map((x, idx) => {
+        const pc = Math.round(x.avg / maxAvg * 100);
+        const sid = schoolIdOf(x.key);
+        return `<tr>
+            <td><strong style="color:var(--paper);">#${idx + 1}</strong></td>
+            <td><span class="mem-school ${sid ? "sc-" + sid : ""}">${esc(x.key)}</span></td>
+            <td style="color:#b5ad99;">${x.cnt} <span style="color:#666;font-size:12px;">人</span></td>
+            <td style="color:var(--gold);font-weight:bold;">${fmt(x.avg)}</td>
+            <td style="color:#d4c9b3;">${fmt(x.total)}</td>
+            <td><span class="mbar"><span style="width:${pc}%;"></span></span> <span style="display:inline-block;margin-left:10px;font-size:13px;color:#888;">${pc}%</span></td>
+        </tr>`;
+    }).join("")}</tbody>`;
+}
+
+/* ---------- 总装载 ---------- */
+function applyActivity(rows){
+    const a = aggregate(rows);
+    const total = a.total;
+    const avg = total ? Math.round(a.sumActive / total) : 0;
+
+    setNum("sumAct", a.sumActive);
+    setNum("passCnt", a.seg[0]);
+    setNum("activeCnt", a.seg[0] + a.seg[1]);
+    setNum("lowCnt", a.seg[3] + a.seg[4]);
+
+    // 不显示同比：数据库只有当前快照，无从比较，不编造
+    setText("sumActSub", `<span>人均 ${fmt(avg)}</span>`);
+    setText("passCntSub", `<span>达标率 ${total ? (a.seg[0] / total * 100).toFixed(1) : "0.0"}%</span>`);
+    setText("activeCntSub", `<span>活跃率 ${total ? ((a.seg[0] + a.seg[1]) / total * 100).toFixed(0) : "0"}%</span>`);
+    setText("lowCntSub", "<span>待唤醒</span>");
+
+    renderBars7(a.bars, a.hasHistory);
+    renderTop10(rows);
+    renderDonut(a.seg, SEG_LABELS);
+    renderSchoolBoard(a.schools);
+}
+
+function loadActivityFromDb(){
+    if (!window.DB) {
+        applyActivity([]);
+        return;
+    }
+    DB.listMembers()
+        .then(function(rows){ applyActivity(rows || []); })
+        .catch(function(e){
+            applyActivity([]);
+            const box = document.getElementById("barchart");
+            if (box) box.innerHTML = emptyBox("数据加载失败", (e && e.message) || "请稍后刷新");
+        });
+}
+
+document.addEventListener("DOMContentLoaded", loadActivityFromDb);
+
 </script>
 <script src="assets/base.js" defer></script>
 </body>

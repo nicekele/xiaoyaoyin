@@ -340,7 +340,8 @@
                 <li><a href="runs.html" class="active">打本统计</a></li>
                 <li><a href="index.html#sect">宗门法规</a></li>
                 <li><a href="index.html#news">新闻</a></li>
-            </ul>
+                        <li><a href="admin.html">管理后台</a></li>
+</ul>
         </div>
         <button class="nav-toggle" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="navMenu">
             <span></span><span></span><span></span>
@@ -357,21 +358,15 @@
             <h1 class="page-cn">打 本 统 计</h1>
         </div>
 
-        <!-- 筛选栏 -->
+        <!-- 筛选栏：时间范围切换已移除（数据库只有本周快照，切换只会显示假数据），
+             保留副本分类筛选，该功能基于真实字段可正常工作 -->
         <div class="filter-bar">
-            <div class="range-tabs" data-tab-group="period">
-                <button class="range-tab" data-tab="week">本周</button>
-                <button class="range-tab active" data-tab="month">本月</button>
-                <button class="range-tab" data-tab="last">上月</button>
-                <button class="range-tab" data-tab="season">本赛季</button>
-            </div>
             <div class="type-filter" data-tab-group="dtype">
                 <label>副本分类：</label>
                 <button class="type-pill active" data-tab="all">全部</button>
                 <button class="type-pill" data-tab="week">百业侠境·周本</button>
                 <button class="type-pill" data-tab="baiye">百叶本</button>
                 <button class="type-pill" data-tab="war">百业战</button>
-                <button class="type-pill" data-tab="pojun">破军杀将</button>
                 <button class="type-pill" data-tab="tower">爬塔挑战</button>
             </div>
         </div>
@@ -381,32 +376,32 @@
             <div class="overview-card oc-hero reveal">
                 <div class="oc-icon">⚔</div>
                 <div class="oc-label">总 打 本 次 数</div>
-                <div class="oc-num"><span id="ovTotal" data-count="542">542</span><span class="unit">次</span></div>
+                <div class="oc-num"><span id="ovTotal" data-count="0">0</span><span class="unit">次</span></div>
                 <div class="oc-sub" id="ovTotalSub">参与成员 98 人 · 周环比 ↑ 12%</div>
             </div>
             <div class="overview-card oc-week reveal">
                 <div class="oc-icon">🛡</div>
                 <div class="oc-label">百 业 侠 境 · 周 本</div>
-                <div class="oc-num"><span id="ovWeek" data-count="184">184</span><span class="unit">次</span></div>
+                <div class="oc-num"><span id="ovWeek" data-count="0">0</span><span class="unit">次</span></div>
                 <div class="oc-sub" id="ovWeekSub">平均每车 9.7 人 · 通关率 96%</div>
             </div>
             <div class="overview-card oc-baiye reveal">
                 <div class="oc-icon">📜</div>
                 <div class="oc-label">百 叶 本</div>
-                <div class="oc-num"><span id="ovBaiye" data-count="228">228</span><span class="unit">次</span></div>
+                <div class="oc-num"><span id="ovBaiye" data-count="0">0</span><span class="unit">次</span></div>
                 <div class="oc-sub" id="ovBaiyeSub">周末集中发车 · 人均 1.9 次</div>
             </div>
             <div class="overview-card oc-war reveal">
                 <div class="oc-icon">🏴</div>
                 <div class="oc-label">百 业 战</div>
-                <div class="oc-num"><span id="ovWar" data-count="48">48</span><span class="unit">场</span></div>
+                <div class="oc-num"><span id="ovWar" data-count="0">0</span><span class="unit">场</span></div>
                 <div class="oc-sub" id="ovWarSub">胜 31 场 / 胜率 <strong style="color:var(--gold);">64.6%</strong></div>
             </div>
             <div class="overview-card oc-tower reveal">
                 <div class="oc-icon">🗼</div>
                 <div class="oc-label">爬 塔 挑 战</div>
-                <div class="oc-num"><span id="ovTower" data-count="82">82</span><span class="unit">层</span></div>
-                <div class="oc-sub" id="ovTowerSub">最高纪录 82 层 · 待突破中</div>
+                <div class="oc-num"><span id="ovTower" data-count="0">0</span><span class="unit">次</span></div>
+                <div class="oc-sub" id="ovTowerSub">本周参与情况</div>
             </div>
         </div>
 
@@ -416,7 +411,7 @@
                 <div class="panel-head">
                     <div>
                         <div class="panel-title">成 员 个 人 打 本 次 数 榜</div>
-                        <div style="color:#777;font-size:12px;margin-top:6px;padding-left:14px;" id="rankHint">本月统计 · 点击表头可排序</div>
+                        <div style="color:#777;font-size:12px;margin-top:6px;padding-left:14px;" id="rankHint">本周统计 · 点击表头可排序</div>
                     </div>
                     <div class="panel-sub" id="rankMeta">显示前 30 名 · 共 98 人参与</div>
                 </div>
@@ -427,12 +422,12 @@
                                 <th data-sort="rank">排名</th>
                                 <th data-sort="name" style="text-align:left;">成 员</th>
                                 <th data-sort="role">身份</th>
-                                <th data-sort="week" title="百业侠境·周本，每人每周最多 5 次">周本/周</th>
-                                <th data-sort="baiye">百叶本</th>
-                                <th data-sort="war">百业战</th>
-                                <th data-sort="tower">爬塔</th>
+                                <th data-sort="runs_raid" title="百业侠境·周本，每人每周最多 5 次">周本/周</th>
+                                <th data-sort="runs_baiye">百叶本</th>
+                                <th data-sort="runs_war">百业战</th>
+                                <th data-sort="runs_tower">爬塔</th>
                                 <th data-sort="total">场次总计</th>
-                                <th data-sort="mvp">贡献度</th>
+                                <th>贡献度</th>
                             </tr>
                         </thead>
                         <tbody id="rankBody"></tbody>
@@ -441,7 +436,7 @@
             </div>
             <div class="panel">
                 <div class="panel-head">
-                    <div class="panel-title">⭐ 本 月 MVP 阵 容</div>
+                    <div class="panel-title">⭐ 本 周 MVP 阵 容</div>
                     <div class="panel-sub">综合出勤+胜率+指挥</div>
                 </div>
                 <div class="mvp-grid" id="mvpGrid"></div>
@@ -493,50 +488,21 @@
             </div>
         </div>
 
-        <!-- 月度副本对比 -->
-        <div class="panel month-wrap">
+        <!-- 副本类型结构（月度对比与发车记录已移除：数据库无历史/场次明细数据） -->
+        <div class="panel">
             <div class="panel-head">
-                <div class="panel-title">近 6 个 月 副 本 对 比</div>
-                <div class="panel-sub">百叶 / 周本 / 百业战 / 爬塔</div>
+                <div class="panel-title">📊 副 本 类 型 结 构</div>
+                <div class="panel-sub" id="donutSub">本周打本构成</div>
             </div>
-            <div class="months" id="months"></div>
-            <div class="legend">
-                <span class="lg-1">百叶本</span>
-                <span class="lg-2">百业侠境·周本</span>
-                <span class="lg-3">百业战</span>
-                <span class="lg-4">爬塔挑战</span>
-            </div>
-        </div>
-
-        <!-- 本周打本记录时间轴 -->
-        <div class="grid-2" style="grid-template-columns:1fr 1fr;">
-            <div class="panel log-panel">
-                <div class="panel-head">
-                    <div class="panel-title" id="logTitle">本 周 发 车 记 录</div>
-                    <div class="panel-sub" id="logMeta">最新 10 场</div>
-                </div>
-                <div class="logs" id="logs"></div>
-            </div>
-            <div class="panel">
-                <div class="panel-head">
-                    <div class="panel-title">📊 副 本 类 型 结 构</div>
-                    <div class="panel-sub" id="donutSub">本月 542 次</div>
-                </div>
-                <div class="type-struct">
-                    <div class="type-donut" id="typeDonut" style="background: conic-gradient(
-                            var(--jade-light) 0% 42.1%,
-                            #6aa0e0 42.1% 76%,
-                            var(--red-light) 76% 84.9%,
-                            #e0b8d8 84.9% 100%
-                        );">
-                        <div class="type-donut-hole">
-                            <div class="td-label">TOTAL</div>
-                            <div class="td-val" id="typeTotal">542</div>
-                            <div class="td-sub">总场次</div>
-                        </div>
+            <div class="type-struct">
+                <div class="type-donut" id="typeDonut" style="background: conic-gradient(#1a1714 0% 100%);">
+                    <div class="type-donut-hole">
+                        <div class="td-label">TOTAL</div>
+                        <div class="td-val" id="typeTotal">0</div>
+                        <div class="td-sub">总场次</div>
                     </div>
-                    <div class="type-legend" id="typeLegend"></div>
                 </div>
+                <div class="type-legend" id="typeLegend"></div>
             </div>
         </div>
 

@@ -143,7 +143,7 @@ a { color: inherit; }
     box-shadow: 0 4px 20px rgba(192, 64, 64, 0.45);
 }
 
-/* 汉堡按钮 —— ≤1100px 时出现。
+/* 汉堡按钮 —— ≤1280px 时出现（菜单项增加后需更早折叠，否则与右侧按钮重叠）
    必须抬高层级：小屏下 logo 文字可能溢出覆盖到它上面，导致点不开。 */
 .nav-toggle {
     display: none;
@@ -518,7 +518,7 @@ a { color: inherit; }
 .anchor-nav .anchor-top::before { display: none; }
 .anchor-nav .anchor-top:hover { background: rgba(201, 169, 97, 0.14); }
 
-@media (max-width: 1100px) {
+@media (max-width: 1340px) {
     .anchor-nav { display: none; }
 }
 
@@ -549,7 +549,7 @@ a { color: inherit; }
     transform: rotate(45deg) translate(1px, 1px);
 }
 /* 有锚点导航时，内容区右侧让出空间，避免导航压住卡片文字 */
-@media (min-width: 1101px) {
+@media (min-width: 1341px) {
     .has-anchor-nav .section-wrap,
     .has-anchor-nav .download-section {
         padding-right: calc(var(--pad-x) + 122px);
@@ -581,12 +581,13 @@ a { color: inherit; }
 }
 
 /* ---------- 11. 响应式 ---------- */
-@media (max-width: 1360px) {
+@media (max-width: 1540px) {
+    /* 菜单增至 10 项，收紧到 12.5px/6px 内边距，保证 1281–1440 与右侧按钮不重叠 */
     .nav-menu { gap: 0; }
-    .nav-menu a { padding: 24px 7px; font-size: 13px; letter-spacing: 0.5px; }
+    .nav-menu a { padding: 24px 6px; font-size: 12.5px; letter-spacing: 0.5px; }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1340px) {
     :root { --pad-x: 28px; }
 
     .nav-toggle { display: flex; }
