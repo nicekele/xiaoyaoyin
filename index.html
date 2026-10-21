@@ -2541,6 +2541,10 @@ const TRACKS = [
       file: "assets/audio/燕云十六声,Yida - 月儿满满照秦川.mp3" },
     { title: "凉州曲", artist: "燕云十六声 / YIDA",
       file: "assets/audio/燕云十六声,Yida - 凉州曲_凉州曲.mp3" },
+    { title: "离思赋", artist: "燕云十六声",
+      file: "assets/audio/燕云十六声 - 离思赋.mp3" },
+    { title: "侠迹 · 玉露为乡", artist: "燕云十六声 / YIDA / 匀子",
+      file: "assets/audio/燕云十六声,Yida,匀子 - 侠迹_玉露为乡.mp3" },
     { title: "醉渔唱晚", artist: "古琴 · 公有领域",
       file: "assets/audio/01-zuiyu-changwan.ogg" },
     { title: "阳关三叠", artist: "古琴 · 公有领域",
@@ -2565,6 +2569,8 @@ function pickRandomIdx(except){
 function renderTrackList(){
     const box = document.getElementById("musicTracks");
     if (!box) return;
+    // 刻意不在这里预请求每首的时长：大文件会互相抢带宽导致整体超时，
+    // 时长改为该曲目真正开始播放时再写入。
     box.innerHTML = TRACKS.map((t, i) => `
         <div class="music-track reveal" tabindex="0" role="button" aria-pressed="false" data-i="${i}">
             <div class="track-num">${String(i + 1).padStart(2, "0")}</div>
@@ -2572,16 +2578,6 @@ function renderTrackList(){
             <div class="track-play">▶</div>
             <div class="track-time" data-time="${i}">--:--</div>
         </div>`).join("");
-    // 逐首读取真实时长填入列表
-    TRACKS.forEach((t, i) => {
-        const probe = new Audio();
-        probe.preload = "metadata";
-        probe.addEventListener("loadedmetadata", () => {
-            const el = document.querySelector(`[data-time="${i}"]`);
-            if (el) el.textContent = fmtTime(probe.duration);
-        });
-        probe.src = encodeURI(t.file);
-    });
 }
 function syncTrackUI(){
     document.querySelectorAll(".music-track").forEach(row => {
@@ -2624,6 +2620,11 @@ function playNextRandom(){ playIndex(pickRandomIdx(curIdx)); }
 audio.addEventListener("play", () => { syncDock(); syncTrackUI(); });
 audio.addEventListener("pause", () => { syncDock(); syncTrackUI(); });
 audio.addEventListener("ended", playNextRandom);
+// 当前曲目元数据就绪后，把真实时长写回列表对应行
+audio.addEventListener("loadedmetadata", () => {
+    const el = document.querySelector(`[data-time="${curIdx}"]`);
+    if (el && isFinite(audio.duration)) el.textContent = fmtTime(audio.duration);
+});
 audio.addEventListener("error", () => {
     if (TRACKS.length > 1) playNextRandom();
 });
