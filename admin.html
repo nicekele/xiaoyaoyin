@@ -387,7 +387,9 @@
                             <div class="field"><label>武学门派</label>
                                 <select id="mSchool"></select>
                             </div>
-                            <div class="field"><label>心法</label><input id="mXinfa" placeholder="如：太玄经"></div>
+                            <div class="field"><label>心法</label>
+                                <select id="mXinfa"></select>
+                            </div>
                             <div class="field"><label>主修武器</label>
                                 <select id="mWeapon">
                                     <option>剑</option><option>刀</option><option>伞</option><option>枪</option>
@@ -672,8 +674,42 @@ bindSignOut('btnSignOut2');
 <script>
 /* ---------- 管理员：数据加载与增删改 ---------- */
 
+/* 各武学流派对应的本职心法（成员心法改为下拉选择，无需手填） */
+var BENYE_XINFA = {
+    '鸣金·虹': ['无名心法'],
+    '鸣金·影': ['剑气纵横'],
+    '牵丝·霖': ['君臣药'],
+    '牵丝·玉': ['花上月令'],
+    '牵丝·翊': ['相合歌'],
+    '裂石·威': ['山河绝韵'],
+    '裂石·钧': ['霜天白夜'],
+    '破竹·风': ['忘川绝响'],
+    '破竹·尘': ['千营一呼'],
+    '破竹·鸢': ['扶摇直上'],
+    '破竹·樽': ['一醉千秋']
+};
+
+function fillXinfaSelect(branchKey, keepValue){
+    var sel = document.getElementById('mXinfa');
+    if (!sel) return;
+    var list = (branchKey && BENYE_XINFA[branchKey]) || [];
+    sel.innerHTML = list.map(function(v){
+        return '<option>' + v + '</option>';
+    }).join('');
+    if (keepValue && list.indexOf(keepValue) === -1) {
+        /* 旧数据里的自由文本心法：保留在下拉里，避免编辑时丢失 */
+        sel.innerHTML = '<option>' + escapeHtml(keepValue) + '</option>' + sel.innerHTML;
+    }
+    if (keepValue) sel.value = keepValue;
+}
+
+document.getElementById('mSchool').addEventListener('change', function(){
+    fillXinfaSelect(this.value);
+});
+
 function loadAll(){
     fillSchoolSelect();
+    fillXinfaSelect(document.getElementById('mSchool').value);
     loadMembers();
     loadPosts();
     loadAccounts();
@@ -794,6 +830,7 @@ function resetMemberForm(){
     document.getElementById('btnSaveMember').textContent = '添 加';
     document.getElementById('btnCancelEdit').hidden = true;
     var lv = document.getElementById('mLevel'); if (lv) lv.value = 100;
+    fillXinfaSelect(document.getElementById('mSchool').value);
     updateRunsAuto();
 }
 
@@ -812,7 +849,7 @@ document.getElementById('memBody').addEventListener('click', function(e){
             document.getElementById('btnCancelEdit').hidden = false;
             document.getElementById('mName').value = m.name || '';
             document.getElementById('mSchool').value = m.school || '';
-            document.getElementById('mXinfa').value = m.xinfa || '';
+            fillXinfaSelect(m.school, m.xinfa || '');
             document.getElementById('mWeapon').value = m.weapon || '剑';
             document.getElementById('mRole').value = m.role || '社众';
             document.getElementById('mLevel').value = m.level || 100;
