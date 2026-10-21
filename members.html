@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>百业成员列表 - 逍遥引 · 燕云十六声</title>
+    <meta name="description" content="逍遥引 · 燕云十六声百业宗门户站：宗门规矩、活动时间表、奖励机制、武学门派与成员数据。">
+    <meta name="theme-color" content="#0a0a0a">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%238b2323'/%3E%3Ctext x='16' y='23' font-size='20' text-anchor='middle' fill='%23f5f0e8' font-family='serif'%3E%E7%87%95%3C/text%3E%3C/svg%3E">
+    <script>document.documentElement.classList.add('js');</script>
+    <link rel="stylesheet" href="assets/base.css">
+    <style>
+        .stats-strip {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 35px;
+        }
+        .stat-card {
+            padding: 24px 28px;
+            background: linear-gradient(180deg, #14120f, #0f0d0a);
+            border: 1px solid rgba(201,169,97,0.2);
+            position: relative; overflow: hidden;
+        }
+        .stat-card::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+            background: linear-gradient(180deg, var(--gold), transparent);
+        }
+        .stat-card .label { font-size: 13px; letter-spacing: 3px; color: #8a8473; margin-bottom: 10px; }
+        .stat-card .num {
+            font-size: 38px; font-weight: bold; color: var(--gold);
+            font-family: "Georgia", serif; line-height: 1;
+        }
+        .stat-card .unit { font-size: 14px; color: #8a8473; margin-left: 6px; }
+        .stat-card .sub { font-size: 12px; color: #666; margin-top: 8px; letter-spacing: 1px; }
+
+        .toolbar {
+            display: grid;
+            grid-template-columns: 1fr 2fr auto auto;
+            gap: 16px;
+            padding: 22px 28px;
+            background: linear-gradient(180deg, #15130f, #11100d);
+            border: 1px solid rgba(201,169,97,0.18);
+            margin-bottom: 22px;
+            align-items: center;
+        }
+        .search-box {
+            position: relative;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 11px 15px 11px 42px;
+            background: #0a0908;
+            border: 1px solid rgba(201,169,97,0.25);
+            color: var(--paper);
+            font-size: 14px; letter-spacing: 0.5px;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .search-box input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,169,97,0.1); }
+        .search-box::before {
+            content: "🔍"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+            font-size: 14px; opacity: 0.6;
+        }
+        .filter-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .filter-group label {
+            font-size: 13px; letter-spacing: 1.5px;
+            color: #8a8473; align-self: center; margin-right: -4px;
+        }
+        .filter-group select {
+            padding: 9px 14px;
+            background: #0a0908;
+            border: 1px solid rgba(201,169,97,0.25);
+            color: var(--paper);
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            outline: none;
+        }
+        .mem-table-wrap {
+            background: linear-gradient(180deg, #12100d, #0d0b09);
+            border: 1px solid rgba(201,169,97,0.18);
+            overflow-x: auto;
+        }
+        table.mem-table {
+            width: 100%; border-collapse: collapse; min-width: 1000px;
+        }
+        table.mem-table thead th {
+            padding: 18px 18px;
+            background: #0d0c0a;
+            border-bottom: 2px solid rgba(201,169,97,0.25);
+            color: var(--gold);
+            font-size: 13px; letter-spacing: 2px; font-weight: bold;
+            text-align: left;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+        }
+        table.mem-table thead th:hover { background: #151310; }
+        table.mem-table thead th .sort-ic { opacity: 0.5; margin-left: 5px; font-size: 11px; }
+        table.mem-table thead th.sort-asc .sort-ic,
+        table.mem-table thead th.sort-desc .sort-ic { opacity: 1; color: var(--gold-light); }
+        table.mem-table tbody tr {
+            transition: all 0.25s;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        table.mem-table tbody tr:hover {
+            background: rgba(201,169,97,0.06);
+        }
+        table.mem-table tbody td {
+            padding: 15px 18px;
+            font-size: 14px;
+            color: #c9c1ae;
+            letter-spacing: 0.5px;
+        }
+        .mem-avatar {
+            width: 42px; height: 42px;
+            background: linear-gradient(135deg, var(--gold-deep), var(--red));
+            display: inline-flex; align-items: center; justify-content: center;
+            color: var(--paper); font-weight: bold; font-size: 15px;
+            vertical-align: middle;
+            margin-right: 12px;
+        }
+        .mem-name {
+            font-size: 15px; color: var(--paper);
+            display: inline-block; vertical-align: middle;
+        }
+        .mem-weapon {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 11px; letter-spacing: 1px;
+            border: 1px solid;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        .online-dot {
+            display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+            margin-right: 7px; vertical-align: middle;
+        }
+        .online { background: #4ade80; box-shadow: 0 0 0 3px rgba(74,222,128,0.2); animation: blink 1.5s infinite; }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .offline { background: #666; }
+        .bar { max-width: 96px; }
+        .bar-val { white-space: nowrap; }
+        .bar-val {
+            display: inline-block; margin-left: 10px; font-size: 13px; color: var(--gold);
+            vertical-align: middle; font-weight: bold;
+        }
+        .op-btn {
+            padding: 5px 12px; font-size: 12px;
+            border: 1px solid rgba(201,169,97,0.3); color: #b5ad99;
+            background: transparent; cursor: pointer; transition: all 0.2s;
+            font-family: inherit; margin-right: 5px;
+        }
+        .op-btn:hover { border-color: var(--gold); color: var(--gold); }
+        .op-btn.danger:hover { border-color: var(--red-light); color: var(--red-light); }
+
+        .pagination {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 25px; gap: 20px; flex-wrap: wrap;
+        }
+        .page-count { color: #8a8473; font-size: 13px; letter-spacing: 1px; }
+        .page-btns { display: flex; gap: 8px; }
+        .page-btn {
+            min-width: 38px; height: 38px;
+            padding: 0 12px;
+            background: transparent;
+            border: 1px solid rgba(201,169,97,0.2);
+            color: #b5ad99;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .page-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+        .page-btn.current {
+            background: var(--gold); color: var(--ink-black); border-color: var(--gold);
+            font-weight: bold;
+        }
+        .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        @media (max-width: 1100px) {
+            .stats-strip { grid-template-columns: repeat(2, 1fr); }
+            .toolbar { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 640px) {
+            .stats-strip { grid-template-columns: 1fr; gap: 12px; }
+            .toolbar { grid-template-columns: 1fr; gap: 12px; padding: 18px; }
+            .stat-card .num { font-size: 31px; }
+            .mem-table-wrap { margin: 0 calc(var(--pad-x) * -1); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="index.html" class="nav-logo">
+                <div class="nav-logo-seal">逍</div>
+                <div class="nav-logo-text"><span>逍遥引</span> · 燕云十六声</div>
+            </a>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">首页</a></li>
+                <li><a href="members.html" class="active">成员管理</a></li>
+                <li><a href="activity.html">活跃度</a></li>
+                <li><a href="online.html">在线时长</a></li>
+                <li><a href="runs.html">打本统计</a></li>
+                <li><a href="index.html#sect">宗门法规</a></li>
+                <li><a href="index.html#news">新闻</a></li>
+            </ul>
+        </div>
+        <button class="nav-toggle" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="navMenu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="nav-right">
+            <button class="nav-btn" onclick="exportData()">📤 导出数据</button>
+            <button class="nav-btn nav-btn-primary" onclick="addMemberBtn()">➕ 添加成员</button>
+        </div>
+    </nav>
+
+    <div class="page-wrap">
+        <div class="page-head">
+            <div class="page-en">MEMBERS DIRECTORY</div>
+            <h1 class="page-cn">百 业 成 员</h1>
+        </div>
+
+        <!-- 统计带 -->
+        <div class="stats-strip">
+            <div class="stat-card reveal">
+                <div class="label">宗 门 总 人 数</div>
+                <div><span class="num" id="totalCnt">100</span><span class="unit">人</span></div>
+                <div class="sub">较上周 + 4 人 新入</div>
+            </div>
+            <div class="stat-card reveal">
+                <div class="label">当 前 在 线</div>
+                <div><span class="num" id="onlineCnt">37</span><span class="unit">人</span></div>
+                <div class="sub">🔴 在线率 <strong style="color:var(--gold);" id="onlineRate">28.9%</strong></div>
+            </div>
+            <div class="stat-card reveal">
+                <div class="label">本 周 平 均 活 跃</div>
+                <div><span class="num" id="avgAct">4862</span><span class="unit">点</span></div>
+                <div class="sub">较上周 <span style="color:#9cd3b0;">↑ 6.8%</span></div>
+            </div>
+            <div class="stat-card reveal">
+                <div class="label">本 周 打 本 总 次</div>
+                <div><span class="num" id="runsCnt">542</span><span class="unit">次</span></div>
+                <div class="sub">较上周 ↑ 12% · 分类明细见「打本统计」</div>
+            </div>
+        </div>
+
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索成员名 / 门派 / 心法 / 武器..." oninput="renderTable()">
+            </div>
+            <div class="filter-group">
+                <label>门派:</label>
+                <select id="fSchool" onchange="renderTable()">
+                    <option value="">全部</option>
+                </select>
+                <label>身份:</label>
+                <select id="fRole" onchange="renderTable()">
+                    <option value="">全部</option>
+                    <option>社长</option><option>副社</option><option>管理</option>
+                    <option>社众</option><option>学徒</option>
+                </select>
+                <label>状态:</label>
+                <select id="fStatus" onchange="renderTable()">
+                    <option value="">全部</option>
+                    <option value="online">在线</option>
+                    <option value="offline">离线</option>
+                </select>
+            </div>
+            <button class="btn" onclick="resetFilter()">🔄 重置筛选</button>
+            <button class="btn btn-primary" onclick="addMemberBtn()">➕ 新增成员</button>
+        </div>
+
+        <!-- 表格 -->
+        <div class="mem-table-wrap">
+            <table class="mem-table" id="memTable">
+                <thead>
+                    <tr>
+                        <th data-sort="id">#<span class="sort-ic">⇅</span></th>
+                        <th data-sort="name">成 员 信 息<span class="sort-ic">⇅</span></th>
+                        <th data-sort="school">武 学 门 派<span class="sort-ic">⇅</span></th>
+                        <th data-sort="level">等 级<span class="sort-ic">⇅</span></th>
+                        <th data-sort="role">身 份</th>
+                        <th data-sort="active">周 活 跃 度<span class="sort-ic">⇅</span></th>
+                        <th data-sort="runs">打 本 数<span class="sort-ic">⇅</span></th>
+                        <th data-sort="last">最 近 登 录<span class="sort-ic">⇅</span></th>
+                        <th>状 态</th>
+                        <th>操 作</th>
+                    </tr>
+                </thead>
+                <tbody id="memBody"></tbody>
+            </table>
+        </div>
+
+        <!-- 分页 -->
+        <div class="pagination">
+            <div class="page-count">共 <strong style="color:var(--gold)" id="cntShow">0</strong> 条记录，每页 <select id="pageSize" onchange="pageSize=+this.value;curPage=1;renderTable()" style="background:#0a0908;border:1px solid rgba(201,169,97,.2);color:var(--paper);padding:3px 6px;">
+                <option value="10">10</option><option value="20" selected>20</option><option value="50">50</option>
+            </select> 条</div>
+            <div class="page-btns" id="pageBtns"></div>
+        </div>
+    </div>
+
+    <div class="footer-bottom">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <span>© 2026 逍遥引 · 燕云十六声 宗门成员管理系统</span>
+            <span>浙ICP备 <a href="#">浙B2-20090185-40</a> · 最后更新：2026-09-19 14:32</span>
+        </div>
+    </div>
+
+<script src="assets/schools.js"></script>
+<script>
+// 大类 → 主修武器池：按各门派心法推断（鸣金剑枪、牵丝扇伞、裂石刀陌、破竹双刀拳绳），
+// 这样人物的武器与所修武学保持一致，不会出现「鸣金·虹 却主修伞」这种矛盾
+const SCHOOL_WEAPONS = {
+    "鸣金": ["剑", "枪"],
+    "牵丝": ["扇", "伞"],
+    "裂石": ["刀", "陌刀", "枪"],
+    "破竹": ["双刀", "拳", "绳镖", "伞"],
+};
+// 身份数量由 ROLE_QUOTA 控制，见下方 buildRolePool
+const firstNames = ["李","上官","慕容","独孤","林","叶","顾","沈","萧","云","楚","风","陆","方","苏","南宫","赵","钱","孙","周","吴","郑","王","冯","陈","卫","蒋","沈","韩","杨"];
+const givenNames = ["逍遥","问天","无忌","云轩","清风","惊鸿","逸尘","长夜","长歌","慕白","飞鸿","雪琪","灵儿","若曦","听雨","忘机","无言","无咎","天行","九歌","潇湘","寒江","飞羽","凌烟"];
+
+function genName(){ return firstNames[Math.floor(Math.random()*firstNames.length)] + givenNames[Math.floor(Math.random()*givenNames.length)]; }
+function hashStr(s){ let h=0; for(const c of s) h=(h*31+c.charCodeAt(0))&0x7fffffff; return h; }
+
+/* 身份配额：1 个社长、1 个副社、6 个管理、最多 20 个学徒，其余为社众，
+   合计固定为宗门总人数。数量由配额表控制，再用固定种子打散，
+   避免「领导挤在列表最前」也让每次刷新结果一致。 */
+const ROLE_QUOTA = [
+    ["社长", 1],
+    ["副社", 1],
+    ["管理", 6],
+    ["学徒", 20],
+];
+function buildRolePool(n){
+    const pool = [];
+    ROLE_QUOTA.forEach(([role, count]) => {
+        const c = Math.min(count, n - pool.length);
+        for (let k = 0; k < c; k++) pool.push(role);
+    });
+    while (pool.length < n) pool.push("社众");
+    let s = 20260919;
+    for (let i = pool.length - 1; i > 0; i--){
+        s = (s * 1103515245 + 12345) & 0x7fffffff;
+        const j = s % (i + 1);
+        const t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+    }
+    return pool;
+}
+
+// 门派分支数据来自 assets/schools.js（YANYUN_BRANCHES）
+function buildMembers(n=100){
+    const branches = window.YANYUN_BRANCHES || [];
+    const rolePool = buildRolePool(n);
+    const arr = [];
+    const nameSet = new Set();
+    for(let i=0;i<n;i++){
+        let name; do { name = genName(); } while(nameSet.has(name)); nameSet.add(name);
+        const seed = hashStr(name);
+        const branch = branches.length
+            ? branches[seed % branches.length]
+            : { key: "—", schoolId: "", school: "", xinfa: ["—"] };
+        const xinfa = branch.xinfa[seed % branch.xinfa.length];
+        const pool = SCHOOL_WEAPONS[branch.school] || ["剑"];
+        const weapon = pool[seed % pool.length];
+        const role = rolePool[i];
+        // 等级上限 100
+        const lv = 92 + (seed % 9);
+        // 周活跃上限 8000（月卡档 5000+ 之上仍留空间）
+        const active = 500 + (seed % 7500);
+        // 本周打本数上限 5 次（侠境副本每周最多 5 次）
+        const runs = 1 + (seed % 5);
+        const online = (seed % 7) < 2 ? "online" : "offline";
+        const daysAgo = online==="online" ? 0 : (seed % 15);
+        arr.push({
+            id: i+1, name, weapon, xinfa,
+            school: branch.key, schoolId: branch.schoolId,
+            level: lv, role,
+            active, runs, online,
+            lastLogin: daysAgo===0 ? "刚刚" : daysAgo+"天前",
+            lastLoginDays: daysAgo,
+            onlineHours: (seed%120) + (online==="online"?3:0)
+        });
+    }
+    return arr;
+}
+
+let MEMBERS = buildMembers(100);
+let curPage = 1; let pageSize = 20; let sortKey = "id"; let sortDir = 1; // 1 asc -1 desc
+
+function applyFilters(list){
+    const kw = document.getElementById("searchInput").value.trim().toLowerCase();
+    const fSch = document.getElementById("fSchool").value;
+    const fR = document.getElementById("fRole").value;
+    const fS = document.getElementById("fStatus").value;
+    return list.filter(m => {
+        if (fSch && m.school !== fSch) return false;
+        if (fR && m.role !== fR) return false;
+        if (fS && m.online !== fS) return false;
+        if (kw) {
+            const s = (m.name + m.weapon + m.xinfa + m.school).toLowerCase();
+            if (!s.includes(kw)) return false;
+        }
+        return true;
+    });
+}
+function applySort(list){
+    const dir = sortDir;
+    const key = sortKey;
+    return list.slice().sort((a,b)=>{
+        let va, vb;
+        switch(key){
+            case "name": va=a.name; vb=b.name; return va.localeCompare(vb,"zh")*dir;
+            case "school": {
+                // 按门派定义顺序排（鸣金→牵丝→裂石→破竹），而不是按拼音
+                const order = (window.YANYUN_BRANCHES || []).map(b => b.key);
+                return (order.indexOf(a.school) - order.indexOf(b.school)) * dir;
+            }
+            case "role": const o={社长:0,副社:1,管理:2,社众:3,学徒:4}; return (o[a.role]-o[b.role])*dir;
+            case "last": return (a.lastLoginDays - b.lastLoginDays)*dir;
+            default: va=a[key]; vb=b[key]; return (va-vb)*dir;
+        }
+    });
+}
+
+function renderTable(){
+    const data = applySort(applyFilters(MEMBERS));
+    const total = data.length;
+    document.getElementById("cntShow").textContent = total;
+    const maxPage = Math.max(1, Math.ceil(total/pageSize));
+    if (curPage > maxPage) curPage = maxPage;
+    const start = (curPage-1)*pageSize;
+    const slice = data.slice(start, start+pageSize);
+
+    document.getElementById("totalCnt").textContent = MEMBERS.length;
+    const onlineN = MEMBERS.filter(m=>m.online==="online").length;
+    document.getElementById("onlineCnt").textContent = onlineN;
+    document.getElementById("onlineRate").textContent =
+        (MEMBERS.length ? (onlineN / MEMBERS.length * 100).toFixed(1) : "0.0") + "%";
+    const avgA = Math.round(MEMBERS.reduce((s,m)=>s+m.active,0)/MEMBERS.length);
+    document.getElementById("avgAct").textContent = avgA;
+    document.getElementById("runsCnt").textContent = MEMBERS.reduce((s,m)=>s+m.runs,0);
+
+    const tb = document.getElementById("memBody");
+    tb.innerHTML = slice.map(m => {
+        const pct = Math.min(100, Math.round(m.active/100));
+        const initial = m.name.slice(0, 2);
+        return `<tr>
+            <td style="color:#8a8473;">${String(m.id).padStart(3,"0")}</td>
+            <td>
+                <span class="mem-avatar">${initial}</span>
+                <span class="mem-name">${m.name}·${m.xinfa}</span>
+                <span class="mem-weapon w-${m.weapon}">${m.weapon}</span>
+            </td>
+            <td><span class="mem-school sc-${m.schoolId}">${m.school}</span></td>
+            <td><span class="lv-badge">Lv.${m.level}</span></td>
+            <td><span class="role-tag role-${m.role}">${m.role}</span></td>
+            <td>
+                <span class="bar"><span style="width:${pct}%"></span></span>
+                <span class="bar-val">${m.active}</span>
+            </td>
+            <td style="font-weight:bold;color:var(--gold-light);">${m.runs} <span style="color:#666;font-weight:normal;font-size:12px;">次</span></td>
+            <td style="color:${m.lastLoginDays<=3?'#9cd3b0':m.lastLoginDays<=7?'#e8d5a3':'#888'};">${m.lastLogin}</td>
+            <td><span class="online-dot ${m.online}"></span>${m.online==="online"?"<span style='color:#9cd3b0'>在线</span>":"<span style='color:#888'>离线</span>"}</td>
+            <td>
+                <button class="op-btn" onclick="viewMem(${m.id})">查看</button>
+                <button class="op-btn danger" onclick="delMem(${m.id})">移除</button>
+            </td>
+        </tr>`;
+    }).join("");
+
+    // 排序箭头 + aria 状态
+    document.querySelectorAll("#memTable thead th").forEach(th => {
+        th.classList.remove("sort-asc","sort-desc");
+        if (th.dataset.sort === sortKey) {
+            th.classList.add(sortDir>0?"sort-asc":"sort-desc");
+            th.setAttribute('aria-sort', sortDir>0 ? 'ascending' : 'descending');
+        } else if (th.dataset.sort) {
+            th.setAttribute('aria-sort', 'none');
+        }
+    });
+
+    // 分页
+    const pb = document.getElementById("pageBtns");
+    let html = `<button class="page-btn" onclick="gotoPage(${curPage-1})" ${curPage<=1?'disabled':''}>‹</button>`;
+    const show = new Set([1,maxPage,curPage,curPage-1,curPage+1]);
+    const pages = [...show].filter(x=>x>=1 && x<=maxPage).sort((a,b)=>a-b);
+    let prev = 0;
+    for(const p of pages){
+        if (p - prev > 1) html += `<span style="color:#555;padding:0 4px;align-self:center;">...</span>`;
+        html += `<button class="page-btn ${p===curPage?'current':''}" onclick="gotoPage(${p})">${p}</button>`;
+        prev = p;
+    }
+    html += `<button class="page-btn" onclick="gotoPage(${curPage+1})" ${curPage>=maxPage?'disabled':''}>›</button>`;
+    pb.innerHTML = html;
+}
+
+function gotoPage(p){
+    curPage = p; renderTable();
+    const wrap = document.querySelector('.mem-table-wrap');
+    const navH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 70;
+    window.scrollTo({
+        top: Math.max(0, wrap.getBoundingClientRect().top + window.scrollY - navH - 8),
+        behavior: 'smooth'
+    });
+}
+
+// 表头排序：鼠标点击 + 键盘 Enter/Space
+document.querySelectorAll("#memTable thead th[data-sort]").forEach(th => {
+    const doSort = () => {
+        const k = th.dataset.sort;
+        if (sortKey === k) sortDir *= -1;
+        else { sortKey = k; sortDir = (k==="name"||k==="school"||k==="role") ? 1 : -1; }
+        curPage = 1; renderTable();
+    };
+    th.setAttribute('tabindex', '0');
+    th.setAttribute('role', 'button');
+    th.addEventListener('click', doSort);
+    th.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); doSort(); }
+    });
+});
+
+function resetFilter(){
+    document.getElementById("searchInput").value="";
+    document.getElementById("fSchool").value="";
+    document.getElementById("fRole").value="";
+    document.getElementById("fStatus").value="";
+    curPage = 1; renderTable();
+}
+
+// 填充「门派」下拉（数据来自 assets/schools.js）
+(function fillSchoolSelect(){
+    const sel = document.getElementById("fSchool");
+    if (!sel || !window.YANYUN_BRANCHES) return;
+    sel.innerHTML = '<option value="">全部</option>' +
+        YANYUN_BRANCHES.map(b => `<option value="${b.key}">${b.key}</option>`).join("");
+})();
+
+function viewMem(id){
+    const m = MEMBERS.find(x=>x.id===id);
+    if (!m) return;
+    alert(`${m.name}\n\n武学门派：${m.school}\n主修心法：${m.xinfa}\n主修武器：${m.weapon}\n等级：Lv.${m.level}\n身份：${m.role}\n周活跃：${m.active}\n本周打本：${m.runs}次\n累计在线：${m.onlineHours}小时\n状态：${m.online==='online'?'在线':'离线（'+m.lastLogin+'）'}`);
+}
+function delMem(id){
+    const m = MEMBERS.find(x=>x.id===id);
+    if (!m) return;
+    if (!confirm(`确认移除成员 ${m.name}？`)) return;
+    MEMBERS = MEMBERS.filter(x=>x.id!==id);
+    renderTable();
+}
+function addMemberBtn(){ alert("⚠ 新增成员功能演示：\n正式版本可录入姓名、武学、心法、身份等信息。"); }
+function exportData(){ alert("📤 数据导出中...\n支持 Excel / CSV / JSON 三种格式导出。"); }
+
+renderTable();
+</script>
+<script src="assets/base.js" defer></script>
+</body>
+</html>

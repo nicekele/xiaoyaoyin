@@ -1,0 +1,2576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>逍遥引 · 燕云十六声百业宗门户站</title>
+    <meta name="description" content="逍遥引 · 燕云十六声百业宗门户站：宗门规矩、活动时间表、奖励机制、武学门派与成员数据。">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="逍遥引 · 燕云十六声百业宗门户站">
+    <meta property="og:description" content="宗门规矩 / 活动时间表 / 奖励机制 / 武学门派 / 成员数据">
+    <meta property="og:image" content="assets/hero.jpg">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%238b2323'/%3E%3Ctext x='16' y='23' font-size='20' text-anchor='middle' fill='%23f5f0e8' font-family='serif'%3E%E7%87%95%3C/text%3E%3C/svg%3E">
+    <script>document.documentElement.classList.add('js');</script>
+    <link rel="stylesheet" href="assets/base.css">
+    <style>
+        /* ====== Hero 主横幅 ====== */
+        .hero {
+            position: relative;
+            height: 100vh; min-height: 720px;
+            overflow: hidden;
+        }
+        .hero-bg {
+            position: absolute; inset: 0;
+            background:
+                linear-gradient(180deg, rgba(10,10,10,0.3) 0%, rgba(10,10,10,0.1) 40%, rgba(10,10,10,0.85) 100%),
+                /* 百业大合照：素材放 assets/group-photo.jpg 即自动生效；缺失时该层不绘制，露出下方山水 */
+                url("assets/group-photo.jpg"),
+                url("assets/hero.jpg");
+            background-size: cover;
+            background-position: center top;
+        }
+        .hero-bg::before {
+            content: ""; position: absolute; inset: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(201,169,97,0.15) 0%, transparent 60%);
+        }
+        /* 宣传视频：素材放 assets/promo.mp4 即自动播放；缺失时不绘制，露出背景图 */
+        .hero-video {
+            position: absolute; inset: 0;
+            z-index: 1;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.9s ease;
+        }
+        .hero-video.is-ready { opacity: 1; }
+        /* 视频就位后叠一层遮罩，保证标题可读；金光晕提到遮罩之上 */
+        .hero-bg::after {
+            content: ""; position: absolute; inset: 0;
+            z-index: 2;
+            background: linear-gradient(180deg, rgba(10,10,10,0.5) 0%, rgba(10,10,10,0.26) 42%, rgba(10,10,10,0.88) 100%);
+            opacity: 0;
+            transition: opacity 0.9s ease;
+            pointer-events: none;
+        }
+        .hero-bg.has-video::after { opacity: 1; }
+        .hero-bg.has-video::before { z-index: 3; }
+        .hero-content {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 0 20px;
+        }
+        .hero-version-tag {
+            padding: 9px 28px;
+            border: 1px solid var(--gold);
+            color: var(--gold-light);
+            font-size: 14px; letter-spacing: 4px;
+            margin-bottom: 26px;
+            background: rgba(10,10,10,0.55);
+            box-shadow: 0 0 22px rgba(201, 169, 97, 0.18);
+        }
+        .hero-title {
+            font-size: 132px; font-weight: bold;
+            letter-spacing: 48px;
+            /* 末字后仍要留出与 letter-spacing 等宽的空隙，避免整体偏左 */
+            text-indent: 48px;
+            color: var(--paper);
+            margin-bottom: 20px;
+            background: linear-gradient(180deg, #fff 0%, var(--gold-light) 55%, var(--gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 4px 26px rgba(201, 169, 97, 0.35))
+                    drop-shadow(0 2px 14px rgba(0, 0, 0, 0.75));
+        }
+        .hero-subtitle {
+            font-size: 25px; letter-spacing: 9px;
+            color: var(--gold-light);
+            margin-bottom: 18px;
+            text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+        }
+        .hero-date {
+            font-size: 18px; letter-spacing: 8px;
+            color: #e0d8c4;
+            margin-bottom: 60px;
+            text-shadow: 0 2px 15px rgba(0,0,0,0.8);
+        }
+        .hero-date strong {
+            color: var(--gold); font-size: 22px;
+            border-bottom: 1px solid var(--gold);
+            padding-bottom: 3px; margin: 0 8px;
+        }
+        .hero-buttons {
+            display: flex; gap: 20px;
+        }
+        .hero-btn {
+            padding: 16px 55px; font-size: 16px;
+            letter-spacing: 5px; font-family: inherit;
+            cursor: pointer; transition: all 0.4s;
+            border: none;
+        }
+        .hero-btn-main {
+            background: linear-gradient(135deg, var(--gold-deep), var(--gold), var(--gold-light));
+            color: var(--ink-black); font-weight: bold;
+            box-shadow: 0 6px 25px rgba(201,169,97,0.4);
+            position: relative; overflow: hidden;
+        }
+        .hero-btn-main::before {
+            content: ""; position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
+        }
+        .hero-btn-main:hover::before { left: 100%; }
+        .hero-btn-main:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 35px rgba(201,169,97,0.6);
+        }
+        .hero-btn-sub {
+            background: rgba(10,10,10,0.6);
+            color: var(--paper);
+            border: 1px solid rgba(245,240,232,0.3);
+        }
+        .hero-btn-sub:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: rgba(201,169,97,0.08);
+            transform: translateY(-3px);
+        }
+        .hero-download-options {
+            display: flex; gap: 30px; margin-top: 28px;
+        }
+        .hero-download-options a {
+            color: rgba(245,240,232,0.55);
+            font-size: 13px; letter-spacing: 2px;
+            text-decoration: none; transition: color 0.3s;
+        }
+        .hero-download-options a:hover { color: var(--gold); }
+        .hero-scroll-tip {
+            position: absolute;
+            bottom: 35px; left: 50%; transform: translateX(-50%);
+            text-align: center;
+        }
+        .hero-scroll-tip p {
+            color: rgba(245,240,232,0.4);
+            font-size: 12px; letter-spacing: 4px;
+            margin-bottom: 10px;
+        }
+        .scroll-arrow {
+            width: 22px; height: 38px;
+            border: 1px solid rgba(201,169,97,0.4);
+            border-radius: 12px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .scroll-arrow::after {
+            content: ""; position: absolute;
+            top: 8px; left: 50%; transform: translateX(-50%);
+            width: 3px; height: 8px;
+            background: var(--gold);
+            border-radius: 2px;
+            animation: scrollDot 1.6s ease-in-out infinite;
+        }
+        @keyframes scrollDot {
+            0% { opacity: 1; top: 8px; }
+            100% { opacity: 0; top: 22px; }
+        }
+
+        /* 首页首屏就是 hero，导航栏悬浮其上，因此去掉共享基座给 body 加的顶部内边距 */
+        body { padding-top: 0; }
+
+        /* ====== 燕云世界 ====== */
+        .world-section {
+            background:
+                radial-gradient(ellipse at top, rgba(201,169,97,0.05) 0%, transparent 50%),
+                #0a0a0a;
+            border-top: 1px solid rgba(201,169,97,0.1);
+        }
+        .world-tabs {
+            display: flex; justify-content: center;
+            gap: 8px; margin-bottom: 40px;
+        }
+        .world-tab {
+            padding: 12px 32px;
+            background: transparent;
+            border: 1px solid rgba(201,169,97,0.3);
+            color: #b8af9b;
+            font-size: 16px; letter-spacing: 5px;
+            cursor: pointer; transition: all 0.3s;
+            font-family: inherit;
+        }
+        .world-tab.active, .world-tab:hover {
+            background: var(--gold);
+            border-color: var(--gold);
+            color: var(--ink-black);
+        }
+        .world-display {
+            max-width: 1400px; margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 45px;
+            align-items: center;
+        }
+        .world-image {
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 16 / 10;
+            border: 1px solid rgba(201,169,97,0.25);
+        }
+        .world-image img {
+            width: 100%; height: 100%; object-fit: cover;
+            transition: transform 0.6s ease;
+            filter: brightness(1.06) contrast(1.04);
+        }
+        .world-image:hover img { transform: scale(1.05); }
+        .world-image-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, transparent 50%, rgba(10,10,10,0.7) 100%);
+        }
+        .world-image-tag {
+            position: absolute;
+            top: 20px; left: 20px;
+            padding: 7px 18px;
+            background: var(--gold);
+            color: var(--ink-black);
+            font-size: 14px; letter-spacing: 4px;
+            font-weight: bold;
+        }
+        /* 「敬请期待」地区：压暗占位，避免误以为是真实地图 */
+        .world-image.is-pending img {
+            filter: grayscale(0.75) brightness(0.32) contrast(1.05);
+        }
+        .world-image.is-pending::after {
+            content: "新 地 区 匠 心 打 磨 中";
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; letter-spacing: 8px;
+            color: rgba(201, 169, 97, 0.75);
+            background:
+                repeating-linear-gradient(45deg,
+                    rgba(10,10,10,0.28) 0 12px,
+                    rgba(10,10,10,0.42) 12px 24px);
+        }
+        .world-image.is-pending:hover img { transform: none; }
+        .world-info {
+            padding: 20px 0;
+        }
+        .world-name {
+            font-size: 60px; font-weight: bold;
+            letter-spacing: 18px;
+            color: var(--paper);
+            margin-bottom: 15px;
+            line-height: 1;
+        }
+        .world-name-en {
+            font-size: 14px; letter-spacing: 6px;
+            color: var(--gold);
+            margin-bottom: 30px;
+            font-family: "Times New Roman", serif;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(201,169,97,0.2);
+        }
+        .world-desc {
+            font-size: 17px; line-height: 2.1;
+            color: #c2b9a5; letter-spacing: 1.5px;
+            margin-bottom: 30px;
+        }
+        .world-features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        .world-feature {
+            padding: 18px 12px;
+            text-align: center;
+            background: rgba(201,169,97,0.05);
+            border: 1px solid rgba(201,169,97,0.15);
+            transition: all 0.3s;
+        }
+        .world-feature:hover {
+            background: rgba(201,169,97,0.12);
+            border-color: var(--gold);
+            transform: translateY(-3px);
+        }
+        .world-feat-icon {
+            font-size: 28px; margin-bottom: 8px;
+        }
+        .world-feat-text {
+            font-size: 13px; letter-spacing: 2px;
+            color: #c9c4b5;
+        }
+
+        /* ====== 武器展示 ====== */
+        .weapon-section {
+            background:
+                linear-gradient(180deg, #0a0a0a 0%, #0e0d0a 50%, #0a0a0a 100%);
+            border-top: 1px solid rgba(201,169,97,0.1);
+        }
+        .weapon-grid {
+            max-width: 1400px; margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+        }
+        .weapon-card {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(180deg, #15130f 0%, #0d0c0a 100%);
+            border: 1px solid rgba(201,169,97,0.2);
+            padding: 40px 35px 35px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+        }
+        .weapon-card::before {
+            content: ""; position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 0; background: linear-gradient(180deg, rgba(201,169,97,0.12), transparent);
+            transition: height 0.4s;
+        }
+        .weapon-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--gold);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5), 0 0 30px rgba(201,169,97,0.1);
+        }
+        .weapon-card:hover::before { height: 100%; }
+        .weapon-top {
+            display: flex; justify-content: space-between;
+            align-items: flex-start; margin-bottom: 25px;
+            position: relative; z-index: 2;
+        }
+        .weapon-symbol {
+            width: 68px; height: 68px;
+            background: linear-gradient(135deg, rgba(201,169,97,0.15), rgba(201,169,97,0.05));
+            border: 1px solid var(--gold);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 36px;
+            color: var(--gold);
+            transition: all 0.4s;
+        }
+        .weapon-card:hover .weapon-symbol {
+            transform: rotate(12deg) scale(1.08);
+            background: linear-gradient(135deg, var(--gold-deep), var(--gold));
+            color: var(--ink-black);
+            box-shadow: 0 0 25px rgba(201,169,97,0.4);
+        }
+        .weapon-name {
+            font-size: 32px; font-weight: bold;
+            letter-spacing: 8px;
+            color: var(--paper);
+            position: relative; z-index: 2;
+        }
+        .weapon-class {
+            position: relative; z-index: 2;
+            padding: 5px 14px;
+            border: 1px solid rgba(201,169,97,0.4);
+            color: var(--gold);
+            font-size: 12px; letter-spacing: 2px;
+            align-self: center;
+        }
+        .weapon-divider {
+            width: 45px; height: 2px;
+            background: linear-gradient(90deg, var(--gold), transparent);
+            margin-bottom: 20px;
+            position: relative; z-index: 2;
+        }
+        .weapon-desc {
+            font-size: 15px; line-height: 2;
+            color: #b5ad99;
+            letter-spacing: 1px;
+            font-style: italic;
+            position: relative; z-index: 2;
+        }
+        .weapon-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            padding-top: 22px;
+            border-top: 1px dashed rgba(201,169,97,0.15);
+            position: relative; z-index: 2;
+        }
+        .weapon-stat {
+            flex: 1; text-align: center;
+        }
+        .weapon-stat-val {
+            font-size: 22px; font-weight: bold;
+            color: var(--gold);
+        }
+        .weapon-stat-label {
+            font-size: 11px; letter-spacing: 2px;
+            color: #8a8473; margin-top: 4px;
+        }
+
+        /* ====== 武学门派 ====== */
+        .school-section {
+            background:
+                radial-gradient(ellipse at 25% 0%, rgba(201,169,97,0.07) 0%, transparent 55%),
+                #0a0a0a;
+            border-top: 1px solid rgba(201,169,97,0.1);
+        }
+        .school-grid {
+            max-width: 1400px; margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            align-items: stretch;
+        }
+        .school-card {
+            --school-accent: var(--gold);
+            --school-accent-soft: rgba(201,169,97,0.12);
+            position: relative;
+            background: linear-gradient(180deg, #15130f 0%, #0d0c0a 100%);
+            border: 1px solid rgba(201,169,97,0.2);
+            padding: 30px 22px 26px;
+            transition: transform 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+            overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+        .school-card::before {
+            content: ""; position: absolute;
+            top: 0; left: 0; right: 0; height: 3px;
+            background: var(--school-accent);
+            opacity: 0.9;
+        }
+        .school-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--school-accent);
+            box-shadow: 0 16px 42px rgba(0,0,0,0.55), 0 0 26px rgba(201,169,97,0.08);
+        }
+        .school-card.gold   { --school-accent: var(--gold);      --school-accent-soft: rgba(201,169,97,0.12); }
+        .school-card.jade   { --school-accent: var(--jade-light); --school-accent-soft: rgba(74,124,89,0.2); }
+        .school-card.red    { --school-accent: var(--red-light);  --school-accent-soft: rgba(139,35,35,0.22); }
+        .school-card.violet { --school-accent: #c2b0e0;           --school-accent-soft: rgba(136,108,184,0.18); }
+
+        .school-head {
+            margin-bottom: 18px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(201,169,97,0.14);
+        }
+        .school-name {
+            font-size: 36px; font-weight: bold;
+            letter-spacing: 14px; color: var(--paper);
+            line-height: 1.15;
+        }
+        .school-name-en {
+            font-size: 11px; letter-spacing: 5px;
+            color: var(--school-accent);
+            margin-top: 7px;
+            font-family: var(--font-num);
+        }
+        .school-tag {
+            display: inline-block; margin-top: 12px;
+            padding: 4px 12px;
+            font-size: 12px; letter-spacing: 2px;
+            border: 1px solid var(--school-accent);
+            color: var(--school-accent);
+            background: var(--school-accent-soft);
+        }
+        .school-branches {
+            display: flex; flex-direction: column; gap: 12px;
+            flex: 1;
+        }
+        .school-branch {
+            padding: 13px 13px 12px;
+            background: rgba(10,10,10,0.5);
+            border: 1px solid rgba(201,169,97,0.1);
+            transition: border-color 0.3s ease, background 0.3s ease;
+        }
+        .school-branch:hover {
+            border-color: var(--school-accent);
+            background: var(--school-accent-soft);
+        }
+        .school-branch-head {
+            display: flex; align-items: baseline; gap: 7px;
+            flex-wrap: wrap;
+            margin-bottom: 9px;
+        }
+        .school-branch-head .b {
+            font-size: 18px; font-weight: bold;
+            letter-spacing: 2px; color: var(--paper);
+        }
+        .school-branch-head .sep { color: var(--school-accent); font-size: 13px; }
+        .school-branch-head .full {
+            font-size: 11.5px; letter-spacing: 1.5px;
+            color: var(--school-accent);
+        }
+        .school-xinfa { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+        .school-xinfa span {
+            padding: 3px 9px;
+            font-size: 12px; letter-spacing: 1px;
+            background: rgba(201,169,97,0.08);
+            border: 1px solid rgba(201,169,97,0.25);
+            color: #d4c9b3;
+        }
+        .school-desc {
+            font-size: 12.5px; line-height: 1.75;
+            color: #8f8877; letter-spacing: 0.5px;
+        }
+
+        /* ====== 首领集 ====== */
+        .boss-section {
+            background:
+                radial-gradient(ellipse at bottom, rgba(139,35,35,0.08) 0%, transparent 60%),
+                #0a0a0a;
+            border-top: 1px solid rgba(201,169,97,0.1);
+        }
+        /* 首领集：按副本类型分四组（主线 / 五人试剑 / 十人侠境 / 野外） */
+        .boss-cats {
+            max-width: 1400px; margin: 0 auto;
+            display: flex; flex-direction: column; gap: 22px;
+        }
+        .boss-empty {
+            text-align: center; color: #8f8877;
+            padding: 40px 0; letter-spacing: 2px;
+        }
+        .boss-cat {
+            --boss-accent: var(--gold);
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 250px;
+            gap: 26px;
+            align-items: stretch;
+            background: linear-gradient(180deg, #15130f 0%, #0d0c0a 100%);
+            border: 1px solid rgba(201, 169, 97, 0.2);
+            padding: 28px 30px;
+            overflow: hidden;
+            transition: border-color 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .boss-cat::before {
+            content: "; position: absolute;
+            top: 0; left: 0; right: 0; height: 3px;
+            background: var(--boss-accent);
+        }
+        .boss-cat:hover {
+            transform: translateY(-4px);
+            border-color: var(--boss-accent);
+            box-shadow: 0 16px 42px rgba(0, 0, 0, 0.55);
+        }
+        .boss-cat.gold   { --boss-accent: var(--gold);      }
+        .boss-cat.jade   { --boss-accent: var(--jade-light); }
+        .boss-cat.red    { --boss-accent: var(--red-light);  }
+        .boss-cat.violet { --boss-accent: #c2b0e0;           }
+        .boss-body { min-width: 0; }
+
+        .boss-cat-head {
+            display: flex; align-items: center; gap: 18px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .boss-cat-no {
+            width: 46px; height: 46px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid var(--boss-accent);
+            color: var(--boss-accent);
+            font-size: 19px; font-weight: bold;
+        }
+        .boss-cat-name {
+            font-size: 26px; font-weight: bold;
+            letter-spacing: 6px; color: var(--paper);
+            line-height: 1.2;
+        }
+        .boss-cat-en {
+            font-size: 11px; letter-spacing: 4px;
+            color: var(--boss-accent);
+            margin-top: 6px;
+            font-family: var(--font-num);
+        }
+        .boss-cat-tip {
+            font-size: 12px; letter-spacing: 1px;
+            color: #8f8877; margin-top: 5px;
+        }
+        .boss-cat-count {
+            margin-left: auto;
+            padding: 6px 15px;
+            border: 1px solid var(--boss-accent);
+            color: var(--boss-accent);
+            font-size: 12.5px; letter-spacing: 2px;
+            white-space: nowrap;
+        }
+        .boss-rows { display: flex; flex-direction: column; gap: 16px; }
+        .boss-group-name {
+            font-size: 15px; letter-spacing: 3px;
+            color: var(--gold); margin-bottom: 10px;
+            display: flex; align-items: center; gap: 9px;
+        }
+        .boss-group-name::before {
+            content: "; width: 18px; height: 1px;
+            background: var(--boss-accent); flex-shrink: 0;
+        }
+        .boss-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+        .boss-chip {
+            padding: 9px 17px;
+            font-size: 15px; letter-spacing: 2px;
+            color: var(--paper);
+            background: rgba(10, 10, 10, 0.55);
+            border: 1px solid rgba(201, 169, 97, 0.28);
+            transition: border-color 0.25s ease, color 0.25s ease,
+                        background 0.25s ease, transform 0.25s ease;
+        }
+        .boss-chip:hover {
+            border-color: var(--boss-accent);
+            color: var(--boss-accent);
+            background: rgba(201, 169, 97, 0.1);
+            transform: translateY(-2px);
+        }
+        .boss-cat-art {
+            min-height: 170px;
+            background-size: cover;
+            background-position: center;
+            border: 1px solid rgba(201, 169, 97, 0.18);
+            filter: brightness(0.55) saturate(0.85) contrast(1.05);
+            transition: filter 0.4s ease;
+        }
+        .boss-cat:hover .boss-cat-art { filter: brightness(0.78) saturate(1) contrast(1.05); }
+
+        /* ====== 宗门牌匾（逍遥引） ====== */
+        .sect-brand {
+            max-width: 1400px;
+            margin: 0 auto 48px;
+            display: flex; align-items: center; justify-content: center;
+            gap: 28px;
+            padding: 28px 34px;
+            background:
+                radial-gradient(ellipse at 30% 50%, rgba(201, 169, 97, 0.12), transparent 65%),
+                linear-gradient(135deg, rgba(201, 169, 97, 0.07), rgba(139, 35, 35, 0.06));
+            border: 1px solid rgba(201, 169, 97, 0.38);
+            position: relative;
+        }
+        .sect-brand::before, .sect-brand::after {
+            content: ""; position: absolute;
+            width: 18px; height: 18px;
+            border: 1px solid var(--gold);
+        }
+        .sect-brand::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+        .sect-brand::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+        .sect-brand-seal {
+            width: 76px; height: 76px; flex-shrink: 0;
+            background: linear-gradient(135deg, var(--red), var(--red-light));
+            display: flex; align-items: center; justify-content: center;
+            color: var(--paper); font-size: 40px; font-weight: bold;
+            box-shadow: 0 0 0 1px rgba(201, 169, 97, 0.55), 0 10px 26px rgba(0, 0, 0, 0.5);
+        }
+        .sect-brand-name {
+            font-size: 56px; font-weight: bold;
+            letter-spacing: 22px; text-indent: 22px;
+            line-height: 1.15;
+            background: linear-gradient(180deg, #ffffff 0%, var(--gold-light) 55%, var(--gold) 100%);
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 3px 18px rgba(201, 169, 97, 0.32));
+        }
+        .sect-brand-sub {
+            font-size: 13px; letter-spacing: 6px;
+            color: var(--gold);
+            margin-top: 8px;
+            font-family: var(--font-num);
+        }
+        .sect-brand-tip {
+            font-size: 13px; letter-spacing: 2px;
+            color: #8f8877; line-height: 1.9;
+            border-left: 1px solid rgba(201, 169, 97, 0.35);
+            padding-left: 22px;
+            max-width: 340px;
+        }
+
+        /* ====== 宗门 / 玩家中心 板块 ====== */
+        .sect-section {
+            background:
+                linear-gradient(135deg, rgba(201,169,97,0.04), rgba(139,35,35,0.04)),
+                #0c0b09;
+            border-top: 1px solid rgba(201,169,97,0.1);
+        }
+        .sect-grid {
+            max-width: 1400px; margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-bottom: 70px;
+        }
+        .sect-card {
+            background: linear-gradient(180deg, #171510 0%, #0f0d0a 100%);
+            border: 1px solid rgba(201,169,97,0.2);
+            padding: 38px 32px 32px;
+            transition: all 0.4s;
+            position: relative;
+            overflow: hidden;
+        }
+        .sect-card::before {
+            content: ""; position: absolute;
+            top: 0; left: 0;
+            width: 4px; height: 100%;
+            background: linear-gradient(180deg, var(--gold), transparent);
+            opacity: 0; transition: opacity 0.4s;
+        }
+        .sect-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--gold);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        }
+        .sect-card:hover::before { opacity: 1; }
+        .sect-tag {
+            display: inline-block;
+            padding: 5px 14px;
+            font-size: 12px; letter-spacing: 3px;
+            margin-bottom: 20px;
+        }
+        .sect-tag.red { background: rgba(139,35,35,0.25); color: #e0a0a0; border: 1px solid var(--red); }
+        .sect-tag.gold { background: rgba(201,169,97,0.15); color: var(--gold); border: 1px solid var(--gold); }
+        .sect-tag.jade { background: rgba(74,124,89,0.15); color: #89c49d; border: 1px solid #4a7c59; }
+        .sect-title {
+            font-size: 24px; font-weight: bold;
+            letter-spacing: 5px;
+            color: var(--paper);
+            margin-bottom: 16px;
+        }
+        .sect-highlight {
+            padding: 13px 16px;
+            background: rgba(10,10,10,0.6);
+            border-left: 3px solid var(--gold);
+            font-size: 14.5px; line-height: 1.8;
+            color: #d4c9b3;
+            margin-bottom: 16px;
+        }
+        .sect-highlight.important {
+            border-left-color: var(--red);
+            color: #f0c8c8;
+            background: rgba(139,35,35,0.08);
+            animation: sectPulse 2.5s ease-in-out infinite;
+        }
+        @keyframes sectPulse {
+            0%,100% { box-shadow: 0 0 0 0 rgba(192,64,64,0); }
+            50% { box-shadow: 0 0 0 6px rgba(192,64,64,0.05); }
+        }
+        .sect-content {
+            font-size: 14px; line-height: 2;
+            color: #b0a892;
+            letter-spacing: 0.5px;
+        }
+        .sect-content .hl-gold { color: var(--gold); font-weight: bold; }
+        .sect-content .hl-red { color: var(--red-light); font-weight: bold; }
+        .sect-content .code-box {
+            display: inline-block;
+            padding: 2px 8px;
+            background: var(--ink-black);
+            color: var(--gold);
+            border: 1px solid rgba(201,169,97,0.3);
+            font-family: "Consolas", monospace;
+            font-size: 13px;
+        }
+
+        /* ====== 活动时间表 ====== */
+        .schedule-box {
+            max-width: 1400px; margin: 0 auto;
+            background: linear-gradient(180deg, #14110d 0%, #0f0d0a 100%);
+            border: 1px solid rgba(201,169,97,0.2);
+            padding: 45px 50px;
+            margin-bottom: 70px;
+            position: relative;
+        }
+        .schedule-box::before, .schedule-box::after {
+            content: ""; position: absolute;
+            width: 40px; height: 40px;
+            border: 2px solid var(--gold);
+        }
+        .schedule-box::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+        .schedule-box::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+        .schedule-head-title {
+            font-size: 22px; font-weight: bold;
+            letter-spacing: 8px;
+            color: var(--paper);
+            margin-bottom: 30px;
+            padding-left: 20px;
+            border-left: 4px solid var(--gold);
+        }
+        .schedule-daily {
+            display: flex; align-items: center;
+            gap: 30px;
+            padding: 22px 28px;
+            background: rgba(201,169,97,0.06);
+            border: 1px solid rgba(201,169,97,0.2);
+            margin-bottom: 28px;
+        }
+        .schedule-daily-time {
+            flex-shrink: 0;
+            text-align: center;
+            padding: 8px 18px;
+            background: linear-gradient(135deg, var(--red), var(--red-light));
+            color: var(--paper);
+        }
+        .schedule-daily-time .t { font-size: 24px; font-weight: bold; letter-spacing: 1px; }
+        .schedule-daily-time .d { font-size: 12px; letter-spacing: 2px; }
+        .schedule-daily-info .n {
+            font-size: 17px; color: var(--paper);
+            font-weight: bold; letter-spacing: 3px; margin-bottom: 4px;
+        }
+        .schedule-daily-info .s {
+            font-size: 13px; color: #a8a18f; letter-spacing: 1px;
+        }
+        .schedule-week {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: rgba(201,169,97,0.15);
+            border: 1px solid rgba(201,169,97,0.2);
+        }
+        .schedule-week-header {
+            padding: 14px 10px;
+            background: #0a0908;
+            text-align: center;
+            font-size: 14px; letter-spacing: 3px;
+            color: var(--gold);
+            font-weight: bold;
+        }
+        .schedule-week-cell {
+            padding: 18px 12px;
+            background: #12100d;
+            text-align: center;
+            min-height: 130px;
+            display: flex; flex-direction: column;
+            justify-content: flex-start;
+        }
+        .schedule-week-cell.off-bg { background: #0f0d0a; }
+        .sched-time {
+            font-size: 18px; font-weight: bold;
+            color: var(--gold);
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .sched-event {
+            font-size: 13px; letter-spacing: 2px;
+            color: var(--paper);
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+        .sched-event.red-e { color: #e8a0a0; }
+        .sched-event.gold-e { color: var(--gold-light); }
+        .sched-event.jade-e { color: #9cd3b0; }
+        .sched-note {
+            font-size: 11px; color: #8a8473;
+            line-height: 1.6; letter-spacing: 0.5px;
+        }
+        .sched-tag {
+            display: inline-block;
+            padding: 3px 8px; margin-top: 6px;
+            font-size: 10px; letter-spacing: 1px;
+            border: 1px solid;
+        }
+        .sched-tag.r { color: var(--red-light); border-color: var(--red); }
+        .sched-tag.g { color: var(--gold); border-color: var(--gold); }
+        .sched-tag.j { color: #89c49d; border-color: #4a7c59; }
+
+        /* ====== 奖励机制 ====== */
+        .reward-grid {
+            max-width: 1400px; margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+        .reward-card {
+            background: linear-gradient(180deg, #18150f 0%, #0f0d0a 100%);
+            border: 1px solid rgba(201,169,97,0.25);
+            padding: 40px 40px 32px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s;
+        }
+        .reward-card:hover {
+            border-color: var(--gold);
+            transform: translateY(-4px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        }
+        .reward-corner {
+            position: absolute; top: 0; right: 0;
+            padding: 10px 22px;
+            font-size: 13px; letter-spacing: 4px;
+            color: var(--ink-black);
+            font-weight: bold;
+        }
+        .corner-blue { background: linear-gradient(135deg, #7986cb, #5c6bc0); color: #fff; }
+        .corner-gold { background: linear-gradient(135deg, var(--gold-light), var(--gold-deep)); }
+        .corner-red { background: linear-gradient(135deg, var(--red-light), var(--red)); color: var(--paper); }
+        .corner-jade { background: linear-gradient(135deg, #6aa97e, #4a7c59); color: var(--paper); }
+        .reward-head {
+            display: flex; align-items: center;
+            gap: 18px; margin-bottom: 28px;
+            padding-top: 6px;
+        }
+        .reward-icon {
+            width: 62px; height: 62px;
+            display: flex; align-items: center; justify-content: center;
+            transform: rotate(45deg);
+            background: rgba(201,169,97,0.12);
+            border: 1px solid var(--gold);
+            font-size: 28px; color: var(--gold);
+        }
+        .reward-icon span { transform: rotate(-45deg); }
+        .reward-title {
+            font-size: 23px; font-weight: bold;
+            letter-spacing: 5px;
+            color: var(--paper);
+        }
+        .reward-prizes {
+            padding: 20px 24px;
+            background: rgba(10,10,10,0.5);
+            border: 1px dashed rgba(201,169,97,0.3);
+            margin-bottom: 22px;
+        }
+        .prize-line {
+            display: flex; justify-content: space-between;
+            align-items: center;
+            padding: 9px 0;
+            border-bottom: 1px dashed rgba(255,255,255,0.06);
+        }
+        .prize-line:last-child { border-bottom: none; }
+        .prize-amt {
+            font-size: 21px; font-weight: bold;
+            color: var(--gold); letter-spacing: 1px;
+        }
+        .prize-line.gold-line .prize-amt { color: #e8d5a3; text-shadow: 0 0 12px rgba(201,169,97,0.3); }
+        .prize-line.red-line .prize-amt { color: #e8a0a0; font-size: 23px; }
+        .prize-line.jade-line .prize-amt { color: #9cd3b0; }
+        .prize-qty {
+            font-size: 14px; letter-spacing: 1px;
+            color: #a8a18f;
+        }
+        .reward-conds {
+            display: flex; flex-direction: column;
+            gap: 10px;
+        }
+        .cond-line {
+            display: flex; align-items: flex-start;
+            gap: 12px;
+            padding: 12px 16px;
+            background: rgba(10,10,10,0.4);
+            border-left: 3px solid #666;
+            font-size: 14px; line-height: 1.7;
+            color: #c2b9a5;
+            letter-spacing: 0.5px;
+        }
+        .cond-line.good { border-left-color: #4a7c59; }
+        .cond-line.best { border-left-color: var(--gold); background: rgba(201,169,97,0.06); }
+        .cond-line.vip { border-left-color: var(--red); background: rgba(139,35,35,0.06); }
+        .cond-line.pend { opacity: 0.7; font-style: italic; }
+        .cond-mark {
+            flex-shrink: 0;
+            width: 20px; height: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; border-radius: 50%;
+            margin-top: 1px;
+        }
+        .good .cond-mark { background: #4a7c59; color: #fff; }
+        .best .cond-mark { background: var(--gold); color: var(--ink-black); }
+        .vip .cond-mark { background: var(--red); color: #fff; }
+        .pend .cond-mark { background: #555; color: #ccc; }
+        .cond-line strong { color: var(--gold); font-weight: bold; }
+
+        .reward-notice {
+            max-width: 1400px; margin: 35px auto 0;
+            padding: 22px 30px;
+            background: linear-gradient(90deg, rgba(139,35,35,0.15), rgba(201,169,97,0.08));
+            border-top: 2px solid var(--gold);
+            display: flex; gap: 18px; align-items: center;
+        }
+        .reward-notice .ic {
+            font-size: 32px; flex-shrink: 0;
+        }
+        .reward-notice p {
+            font-size: 13.5px; line-height: 1.9;
+            color: #c2b9a5; letter-spacing: 1px;
+        }
+
+        /* ====== 新闻中心 ====== */
+        .news-section {
+            background: #0a0a0a;
+            border-top: 1px solid rgba(201,169,97,0.1);
+        }
+        .news-wrap {
+            max-width: 1400px; margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+        }
+        .news-left-tabs {
+            display: flex; gap: 0;
+            border-bottom: 1px solid rgba(201,169,97,0.2);
+            margin-bottom: 30px;
+        }
+        .news-tab {
+            padding: 14px 30px;
+            background: transparent;
+            border: none; border-bottom: 2px solid transparent;
+            color: #9a9383;
+            font-size: 15px; letter-spacing: 3px;
+            cursor: pointer; transition: all 0.3s;
+            font-family: inherit;
+        }
+        .news-tab.active, .news-tab:hover {
+            color: var(--gold);
+            border-bottom-color: var(--gold);
+        }
+        .news-list {
+            display: flex; flex-direction: column;
+        }
+        .news-item {
+            display: grid;
+            grid-template-columns: 90px 1fr auto;
+            gap: 18px;
+            padding: 18px 0;
+            border-bottom: 1px dashed rgba(255,255,255,0.06);
+            cursor: pointer;
+            transition: all 0.3s;
+            align-items: center;
+        }
+        .news-item:hover {
+            background: rgba(201,169,97,0.04);
+            padding-left: 10px; padding-right: 10px;
+        }
+        .news-date {
+            text-align: center;
+            padding: 8px 5px;
+            border: 1px solid rgba(201,169,97,0.3);
+        }
+        .news-date .m { font-size: 11px; color: #8a8473; letter-spacing: 1px; }
+        .news-date .d { font-size: 20px; color: var(--gold); font-weight: bold; }
+        .news-cat-tag {
+            display: inline-block;
+            padding: 3px 9px;
+            font-size: 11px; letter-spacing: 1px;
+            margin-right: 10px;
+        }
+        .nt-新闻 { background: rgba(201,169,97,0.15); color: var(--gold); border: 1px solid var(--gold); }
+        .nt-公告 { background: rgba(139,35,35,0.15); color: var(--red-light); border: 1px solid var(--red); }
+        .nt-活动 { background: rgba(74,124,89,0.18); color: #9cd3b0; border: 1px solid #4a7c59; }
+        .news-title {
+            font-size: 15px; color: #d0c8b5;
+            letter-spacing: 0.5px; line-height: 1.6;
+            display: inline;
+        }
+        .news-item:hover .news-title { color: var(--gold); }
+        .news-subtitle {
+            font-size: 12px; color: #7a7464;
+            margin-top: 5px; padding-left: 0;
+        }
+        .news-arrow {
+            color: #5a5446; font-size: 20px;
+            transition: all 0.3s;
+        }
+        .news-item:hover .news-arrow {
+            color: var(--gold); transform: translateX(5px);
+        }
+        .news-more {
+            margin-top: 25px;
+            text-align: right;
+        }
+        .news-more a {
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 14px; letter-spacing: 3px;
+            padding: 8px 18px;
+            border: 1px solid rgba(201,169,97,0.4);
+            transition: all 0.3s;
+        }
+        .news-more a:hover {
+            background: var(--gold);
+            color: var(--ink-black);
+        }
+        .news-right-banners {
+            display: flex; flex-direction: column;
+            gap: 20px;
+        }
+        .big-banner {
+            position: relative;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            border: 1px solid rgba(201,169,97,0.2);
+            cursor: pointer;
+        }
+        .big-banner img {
+            width: 100%; height: 100%; object-fit: cover;
+            transition: transform 0.5s;
+            filter: brightness(1.1);
+        }
+        .big-banner:hover img { transform: scale(1.06); filter: brightness(1.25); }
+        .big-banner-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(10,10,10,0.95) 0%, transparent 60%);
+            padding: 25px;
+            display: flex; flex-direction: column;
+            justify-content: flex-end;
+        }
+        .banner-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--red);
+            color: var(--paper);
+            font-size: 12px; letter-spacing: 2px;
+            margin-bottom: 12px;
+            width: fit-content;
+        }
+        .banner-title {
+            font-size: 21px; color: var(--paper);
+            font-weight: bold; letter-spacing: 2px;
+            margin-bottom: 6px;
+            line-height: 1.5;
+        }
+        .banner-sub {
+            font-size: 13px; color: #b0a892;
+            letter-spacing: 1px;
+        }
+        .small-banners {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .small-banner {
+            position: relative;
+            aspect-ratio: 4 / 3;
+            overflow: hidden;
+            border: 1px solid rgba(201,169,97,0.15);
+            cursor: pointer;
+        }
+        .small-banner img {
+            width: 100%; height: 100%; object-fit: cover;
+            transition: all 0.5s;
+            filter: brightness(1.08);
+        }
+        .small-banner:hover img { transform: scale(1.08); filter: brightness(1.28); }
+        .small-banner .t {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 10px 12px;
+            background: linear-gradient(to top, rgba(10,10,10,0.9), transparent);
+            color: #e0d8c4; font-size: 13px; letter-spacing: 1px;
+        }
+
+        /* ====== 原生大碟 / 音频壁纸 ====== */
+        .media-section {
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(74,124,89,0.06) 0%, transparent 50%),
+                #0a0a0a;
+            border-top: 1px solid rgba(201,169,97,0.1);
+        }
+        .media-wrap {
+            max-width: 1400px; margin: 0 auto;
+            display: grid;
+            grid-template-columns: 0.9fr 1.1fr;
+            gap: 45px;
+            align-items: start;
+        }
+        .album-cover {
+            position: sticky;
+            top: 100px;
+            aspect-ratio: 1 / 1;
+            background:
+                linear-gradient(135deg, rgba(201,169,97,0.15), rgba(139,35,35,0.1)),
+                url("assets/album.jpg");
+            background-size: cover;
+            background-position: center;
+            border: 1px solid rgba(201,169,97,0.3);
+            display: flex; flex-direction: column;
+            justify-content: flex-end;
+            padding: 40px;
+        }
+        .album-label {
+            display: inline-block;
+            padding: 5px 14px;
+            background: var(--gold);
+            color: var(--ink-black);
+            font-size: 12px; letter-spacing: 3px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            width: fit-content;
+        }
+        .album-name {
+            font-size: 40px; font-weight: bold;
+            letter-spacing: 10px;
+            color: var(--paper);
+            text-shadow: 0 2px 15px rgba(0,0,0,0.8);
+            margin-bottom: 10px;
+        }
+        .album-sub {
+            font-size: 14px; letter-spacing: 3px;
+            color: #d0c8b5;
+        }
+        .music-list {
+            background: #11100d;
+            border: 1px solid rgba(201,169,97,0.15);
+        }
+        .music-list-head {
+            padding: 22px 30px;
+            background: #161410;
+            border-bottom: 1px solid rgba(201,169,97,0.15);
+            display: flex; justify-content: space-between;
+            align-items: center;
+        }
+        .music-list-head h4 {
+            font-size: 18px; letter-spacing: 5px;
+            color: var(--paper);
+        }
+        .music-list-head span {
+            font-size: 12px; color: #8a8473;
+            letter-spacing: 1px;
+        }
+        .music-track {
+            display: grid;
+            grid-template-columns: 50px 1fr auto 80px;
+            gap: 15px;
+            padding: 15px 30px;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .music-track:hover {
+            background: rgba(201,169,97,0.06);
+        }
+        .music-track:last-child { border-bottom: none; }
+        .track-num {
+            font-size: 15px; color: #666;
+            text-align: center;
+            font-family: "Georgia", serif;
+        }
+        .music-track:hover .track-num { color: var(--gold); }
+        .track-info .n {
+            font-size: 14.5px; color: #d0c8b5;
+            letter-spacing: 1px; margin-bottom: 3px;
+        }
+        .track-info .a {
+            font-size: 12px; color: #7a7464;
+            letter-spacing: 0.5px;
+        }
+        .track-play {
+            width: 32px; height: 32px;
+            border: 1px solid rgba(201,169,97,0.3);
+            color: var(--gold);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: all 0.3s;
+        }
+        .music-track:hover .track-play { opacity: 1; }
+        /* 选中当前曲目（无音频文件，仅做选中态） */
+        .music-track.is-playing {
+            background: rgba(201, 169, 97, 0.1);
+            box-shadow: inset 3px 0 0 var(--gold);
+        }
+        .music-track.is-playing .track-play {
+            opacity: 1;
+            background: var(--gold);
+            color: var(--ink-black);
+            border-color: var(--gold);
+        }
+        .music-track.is-playing .track-info .n { color: var(--gold-light); }
+        .music-track:focus-visible {
+            outline: 2px solid var(--gold);
+            outline-offset: -2px;
+        }
+        .track-time {
+            font-size: 12px; color: #7a7464;
+            text-align: right;
+            font-family: "Georgia", serif;
+        }
+
+        /* ====== 下载/玩家活动区 ====== */
+        .download-section {
+            position: relative;
+            padding: 120px 60px;
+            background:
+                linear-gradient(135deg, rgba(10,10,10,0.9), rgba(139,35,35,0.6)),
+                url("assets/download-bg.jpg");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            border-top: 1px solid rgba(201,169,97,0.2);
+        }
+        .download-inner {
+            max-width: 1100px; margin: 0 auto;
+            text-align: center;
+            position: relative; z-index: 2;
+        }
+        .download-tag {
+            display: inline-block;
+            padding: 8px 26px;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            font-size: 14px; letter-spacing: 5px;
+            margin-bottom: 25px;
+        }
+        .download-title {
+            font-size: 50px; font-weight: bold;
+            letter-spacing: 15px;
+            color: var(--paper);
+            text-shadow: 0 4px 30px rgba(0,0,0,0.8);
+            margin-bottom: 20px;
+            background: linear-gradient(180deg, #fff 0%, var(--gold-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .download-sub {
+            font-size: 17px; letter-spacing: 5px;
+            color: #e0d8c4;
+            margin-bottom: 50px;
+            line-height: 2;
+        }
+        .download-buttons {
+            display: flex; gap: 22px; justify-content: center;
+            flex-wrap: wrap;
+        }
+        .dl-btn {
+            padding: 18px 55px; font-size: 16px;
+            letter-spacing: 5px;
+            font-family: inherit;
+            cursor: pointer; transition: all 0.4s;
+        }
+        .dl-btn-gold {
+            background: linear-gradient(135deg, var(--gold-deep), var(--gold));
+            color: var(--ink-black); border: none;
+            font-weight: bold;
+        }
+        .dl-btn-gold:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(201,169,97,0.45);
+        }
+        .dl-btn-out {
+            background: transparent;
+            color: var(--paper);
+            border: 1px solid rgba(245,240,232,0.4);
+        }
+        .dl-btn-out:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+            transform: translateY(-3px);
+        }
+        .dl-links {
+            display: flex; gap: 30px; justify-content: center;
+            margin-top: 30px; flex-wrap: wrap;
+        }
+        .dl-links a {
+            color: rgba(245,240,232,0.5);
+            font-size: 13px; letter-spacing: 2px;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .dl-links a:hover { color: var(--gold); }
+
+        /* ====== 页脚 ====== */
+        footer {
+            background: #050505;
+            padding: 65px 60px 25px;
+            border-top: 1px solid rgba(201,169,97,0.1);
+        }
+        .footer-top {
+            max-width: 1400px; margin: 0 auto 50px;
+            display: grid;
+            grid-template-columns: 1.3fr 1fr 1fr 1fr;
+            gap: 50px;
+        }
+        .footer-brand-logo {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 22px;
+        }
+        .footer-brand-seal {
+            width: 44px; height: 44px;
+            background: var(--red);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--paper); font-weight: bold;
+            font-size: 18px; letter-spacing: 1px;
+        }
+        .footer-brand-title {
+            font-size: 22px; font-weight: bold;
+            letter-spacing: 4px; color: var(--paper);
+        }
+        .footer-brand-title span { color: var(--gold); }
+        .footer-brand-desc {
+            font-size: 13px; line-height: 2;
+            color: #777; letter-spacing: 0.5px;
+            max-width: 360px;
+        }
+        .follow-wrap {
+            margin-top: 25px;
+            display: flex; gap: 10px; flex-wrap: wrap;
+        }
+        .follow-item {
+            width: 92px;
+            padding: 12px 8px;
+            border: 1px solid rgba(201,169,97,0.2);
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .follow-item:hover {
+            border-color: var(--gold);
+            background: rgba(201,169,97,0.06);
+        }
+        .follow-item .ic {
+            font-size: 22px; margin-bottom: 5px; color: var(--gold);
+        }
+        .follow-item .t {
+            font-size: 11px; color: #888; letter-spacing: 1px;
+        }
+        .footer-col h5 {
+            font-size: 16px; letter-spacing: 4px;
+            color: var(--gold);
+            margin-bottom: 22px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(201,169,97,0.2);
+        }
+        .footer-col ul { list-style: none; }
+        .footer-col li { margin-bottom: 12px; }
+        .footer-col a {
+            color: #888; text-decoration: none;
+            font-size: 13px; letter-spacing: 1px;
+            transition: color 0.3s;
+        }
+        .footer-col a:hover { color: var(--gold); }
+        .footer-bottom {
+            max-width: 1400px; margin: 0 auto;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .age-tip {
+            display: flex; align-items: center; gap: 18px;
+            margin-bottom: 18px; flex-wrap: wrap;
+        }
+        .age-tag {
+            width: 50px; height: 50px;
+            background: #222;
+            border: 2px solid #444;
+            color: #ccc;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 18px;
+            flex-shrink: 0;
+        }
+        .age-text {
+            font-size: 12.5px; color: #777;
+            letter-spacing: 1px; line-height: 1.8;
+        }
+        .footer-legal {
+            display: flex; flex-wrap: wrap; gap: 20px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+        .footer-legal, .footer-legal a {
+            font-size: 12px; color: #555;
+            letter-spacing: 0.5px; text-decoration: none;
+        }
+        .footer-legal a:hover { color: var(--gold); }
+
+        /* ====== 响应式 ====== */
+        @media (max-width: 1100px) {
+            .hero-title { font-size: 88px; letter-spacing: 32px; text-indent: 32px; }
+            .hero-subtitle { font-size: 19px; letter-spacing: 5px; }
+            .world-display { grid-template-columns: 1fr; }
+            .weapon-grid { grid-template-columns: repeat(2, 1fr); }
+            .school-grid { grid-template-columns: repeat(2, 1fr); }
+            .boss-cat { grid-template-columns: 1fr 190px; gap: 20px; }
+            .boss-cat-art { min-height: 150px; }
+            .sect-grid { grid-template-columns: repeat(2, 1fr); }
+            .sect-brand { gap: 20px; padding: 24px 22px; }
+            .sect-brand-seal { width: 64px; height: 64px; font-size: 32px; }
+            .sect-brand-name { font-size: 44px; letter-spacing: 16px; text-indent: 16px; }
+            .sect-brand-tip { max-width: 260px; }
+            .schedule-week { grid-template-columns: repeat(4, 1fr); }
+            .reward-grid { grid-template-columns: 1fr; }
+            .news-wrap { grid-template-columns: 1fr; }
+            .media-wrap { grid-template-columns: 1fr; }
+            .album-cover { position: static; }
+            .footer-top { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 640px) {
+            .hero { min-height: 560px; }
+            .hero-title { font-size: 52px; letter-spacing: 16px; text-indent: 16px; }
+            .hero-subtitle { font-size: 13px; letter-spacing: 2px; }
+            .hero-date { font-size: 13px; letter-spacing: 2px; }
+            .hero-download-options { flex-wrap: wrap; justify-content: center; gap: 14px; }
+            .hero-buttons { flex-direction: column; width: 100%; max-width: 320px; margin: 0 auto; }
+            .hero-btn { padding: 14px; width: 100%; }
+            .world-tabs { flex-wrap: wrap; justify-content: flex-start; }
+            .world-tab { padding: 9px 16px; font-size: 14px; letter-spacing: 3px; }
+            .world-name { font-size: 34px; letter-spacing: 8px; }
+            .world-features { grid-template-columns: 1fr 1fr; }
+            .weapon-grid { grid-template-columns: 1fr; }
+            .school-grid { grid-template-columns: 1fr; gap: 14px; }
+            .school-name { font-size: 30px; letter-spacing: 10px; }
+            .boss-cat { grid-template-columns: 1fr; padding: 22px 18px; }
+            .boss-cat-art { min-height: 140px; order: -1; }
+            .boss-cat-name { font-size: 21px; letter-spacing: 4px; }
+            .boss-chip { padding: 7px 13px; font-size: 14px; }
+            .boss-cat-count { margin-left: 0; }
+            .boss-name { font-size: 19px; letter-spacing: 3px; }
+            .sect-grid { grid-template-columns: 1fr; }
+            .sect-brand { flex-direction: column; text-align: center; gap: 16px; padding: 26px 16px; }
+            .sect-brand-name { font-size: 36px; letter-spacing: 12px; text-indent: 12px; }
+            .sect-brand-sub { letter-spacing: 3px; font-size: 11px; }
+            .sect-brand-tip {
+                border-left: none;
+                border-top: 1px solid rgba(201, 169, 97, 0.35);
+                padding-left: 0; padding-top: 16px;
+                max-width: none;
+            }
+            .schedule-box { padding: 25px 16px; }
+            .schedule-daily { flex-direction: column; gap: 15px; text-align: center; }
+            .schedule-week { grid-template-columns: 1fr; }
+            .schedule-week-cell { min-height: auto; }
+            .news-right-banners .small-banners { grid-template-columns: 1fr; }
+            .media-wrap { gap: 25px; }
+            .music-track { grid-template-columns: 40px 1fr auto; padding: 13px 16px; }
+            .track-time { display: none; }
+            .music-list-head { padding: 16px; }
+            /* fixed 背景在移动端卡顿且多数浏览器不支持，退回普通滚动 */
+            .download-section { padding: 70px 18px; background-attachment: scroll; }
+            .download-title { font-size: 28px; letter-spacing: 7px; }
+            .download-buttons { flex-direction: column; max-width: 320px; margin: 0 auto; }
+            .dl-btn { width: 100%; padding: 15px; }
+            .dl-links { gap: 16px; }
+            .footer-top { grid-template-columns: 1fr; gap: 32px; }
+            footer { padding: 50px 20px 20px; }
+            .age-tag { width: 44px; height: 44px; font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<nav class="navbar">
+    <div class="nav-left">
+        <div class="nav-logo">
+            <div class="nav-logo-seal">逍</div>
+            <div class="nav-logo-text"><span>逍遥引</span> · 燕云十六声</div>
+        </div>
+        <ul class="nav-menu" id="navMenu">
+            <li><a href="#home">首页</a></li>
+            <li><a href="#world">燕云世界</a></li>
+            <li><a href="#weapons">武器展示</a></li>
+            <li><a href="#schools">武学门派</a></li>
+            <li><a href="#boss">首领集</a></li>
+            <li><a href="#sect">宗门百业</a></li>
+            <li><a href="#news">新闻</a></li>
+            <li><a href="members.html">成员管理</a></li>
+            <li><a href="runs.html">打本统计</a></li>
+        </ul>
+    </div>
+    <button class="nav-toggle" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="navMenu">
+        <span></span><span></span><span></span>
+    </button>
+    <div class="nav-right">
+        <button class="nav-btn" onclick="location.href='members.html'">成员中心</button>
+        <button class="nav-btn" onclick="location.href='activity.html'">数据看板</button>
+        <button class="nav-btn nav-btn-primary" onclick="location.href='#sect'">宗门规矩</button>
+    </div>
+</nav>
+
+<!-- 右侧悬浮锚点导航（参照官方专题页，本站用深色金边适配黑底） -->
+<aside class="anchor-nav" aria-label="页面分区导航">
+    <a href="#home">首页</a>
+    <a href="#world">燕云世界</a>
+    <a href="#weapons">武器展示</a>
+    <a href="#schools">武学门派</a>
+    <a href="#boss">首领集</a>
+    <a href="#sect">宗门百业</a>
+    <a href="#news">新闻中心</a>
+    <a href="#join">加入百业</a>
+</aside>
+
+<!-- Hero 主横幅 -->
+<section class="hero" id="home">
+    <div class="hero-bg">
+        <video class="hero-video" id="heroVideo"
+               src="assets/promo.mp4"
+               poster="assets/group-photo.jpg"
+               muted loop playsinline preload="auto"
+               aria-label="百业宣传视频"></video>
+    </div>
+    <div class="hero-content">
+        <div class="hero-version-tag">◆ 百 业 宗 门 · 燕 云 十 六 声 ◆</div>
+        <h1 class="hero-title">逍遥引</h1>
+        <div class="hero-subtitle">燕 云 十 六 声 · 同 舟 共 济</div>
+        <div class="hero-date">每周一晚 <strong>19:30</strong> 百业侠境开团</div>
+        <div class="hero-buttons">
+            <button class="hero-btn hero-btn-main" onclick="location.href='#sect'">宗 门 规 矩</button>
+            <button class="hero-btn hero-btn-sub" onclick="location.href='#schedule'">活 动 时 间 表</button>
+        </div>
+        <div class="hero-download-options">
+            <a href="#schools">武学门派</a>
+            <a href="#sect">奖励机制</a>
+            <a href="members.html">成员名录</a>
+            <a href="#join">加入百业</a>
+        </div>
+    </div>
+    <div class="hero-scroll-tip">
+        <p>SCROLL DOWN</p>
+        <div class="scroll-arrow"></div>
+    </div>
+</section>
+
+<!-- 燕云世界 -->
+<section class="section-wrap world-section" id="world">
+    <div class="section-title-group">
+        <div class="section-en">YANYUN WORLD</div>
+        <h2 class="section-cn">燕 云 世 界</h2>
+    </div>
+    <div class="world-tabs" data-tab-group="world">
+        <button class="world-tab active" data-tab="qinghe">清河</button>
+        <button class="world-tab" data-tab="kaifeng">开封</button>
+        <button class="world-tab" data-tab="hexi">河西</button>
+        <button class="world-tab" data-tab="bujianshan">不见山</button>
+        <button class="world-tab" data-tab="jiangnan">江南</button>
+        <button class="world-tab" data-tab="soon">敬请期待</button>
+    </div>
+    <div class="world-display">
+        <div class="world-image">
+            <img id="worldImg" src="assets/world-qinghe.jpg" alt="清河">
+            <div class="world-image-overlay"></div>
+            <div class="world-image-tag" id="worldTag">第 一 站</div>
+        </div>
+        <div class="world-info">
+            <div class="world-name" id="worldName">清河</div>
+            <div class="world-name-en" id="worldNameEn">QINGHE · THE FIRST STOP</div>
+            <p class="world-desc" id="worldDesc">
+                清河，燕云大地的起点。山水相映，市井繁华，初入江湖的游侠在此启程。
+                古桥横跨溪流，酒旗迎风招展，万千故事从此地悄然拉开序幕。
+                鼓为律之枢，绫为舞之韵，跳珠撼玉，流风回雪。
+            </p>
+            <div class="world-features" id="worldFeatures">
+                <div class="world-feature reveal">
+                    <div class="world-feat-icon">🏮</div>
+                    <div class="world-feat-text">初入江湖</div>
+                </div>
+                <div class="world-feature reveal">
+                    <div class="world-feat-icon">🎭</div>
+                    <div class="world-feat-text">樊楼歌舞</div>
+                </div>
+                <div class="world-feature reveal">
+                    <div class="world-feat-icon">⛩</div>
+                    <div class="world-feat-text">古刹寻踪</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 武器展示 -->
+<section class="section-wrap weapon-section" id="weapons">
+    <div class="section-title-group">
+        <div class="section-en">WEAPONS DISPLAY</div>
+        <h2 class="section-cn">武 器 展 示</h2>
+    </div>
+    <div class="weapon-grid">
+        <div class="weapon-card reveal">
+            <div class="weapon-top">
+                <div class="weapon-symbol">👊</div>
+                <div>
+                    <div class="weapon-name">拳</div>
+                </div>
+                <div class="weapon-class">百技之先</div>
+            </div>
+            <div class="weapon-divider"></div>
+            <p class="weapon-desc">拳乃百技之先，行刚柔之变，静如渊渟，动若雷霆。不矜不伐，挥手间，徜徉恣意，畅快淋漓。</p>
+            <div class="weapon-stats">
+                <div class="weapon-stat"><div class="weapon-stat-val">92</div><div class="weapon-stat-label">攻 击</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">85</div><div class="weapon-stat-label">防 御</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">78</div><div class="weapon-stat-label">速 度</div></div>
+            </div>
+        </div>
+        <div class="weapon-card reveal">
+            <div class="weapon-top">
+                <div class="weapon-symbol">🗡</div>
+                <div><div class="weapon-name">横刀</div></div>
+                <div class="weapon-class">擅破甲</div>
+            </div>
+            <div class="weapon-divider"></div>
+            <p class="weapon-desc">横刀锋利，擅破甲，擅反击。敌进则斩其势，敌退则夺其隙。刀横一瞬，生死两分。</p>
+            <div class="weapon-stats">
+                <div class="weapon-stat"><div class="weapon-stat-val">98</div><div class="weapon-stat-label">攻 击</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">72</div><div class="weapon-stat-label">防 御</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">80</div><div class="weapon-stat-label">速 度</div></div>
+            </div>
+        </div>
+        <div class="weapon-card reveal">
+            <div class="weapon-top">
+                <div class="weapon-symbol">⚔</div>
+                <div><div class="weapon-name">长剑</div></div>
+                <div class="weapon-class">君子之器</div>
+            </div>
+            <div class="weapon-divider"></div>
+            <p class="weapon-desc">剑为君子之器，守中庸之道。不偏不倚，无过无不及。轻盈灵动，定天下风尘，周防君子身。</p>
+            <div class="weapon-stats">
+                <div class="weapon-stat"><div class="weapon-stat-val">90</div><div class="weapon-stat-label">攻 击</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">75</div><div class="weapon-stat-label">防 御</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">92</div><div class="weapon-stat-label">速 度</div></div>
+            </div>
+        </div>
+        <div class="weapon-card reveal">
+            <div class="weapon-top">
+                <div class="weapon-symbol">☂</div>
+                <div><div class="weapon-name">伞</div></div>
+                <div class="weapon-class">轻盈写意</div>
+            </div>
+            <div class="weapon-divider"></div>
+            <p class="weapon-desc">伞为兵器，轻盈写意，见招之时如翩翩起舞，伤人无形。进可攻，退可守，开合之间，飘逸取胜。</p>
+            <div class="weapon-stats">
+                <div class="weapon-stat"><div class="weapon-stat-val">78</div><div class="weapon-stat-label">攻 击</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">90</div><div class="weapon-stat-label">防 御</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">85</div><div class="weapon-stat-label">速 度</div></div>
+            </div>
+        </div>
+        <div class="weapon-card reveal">
+            <div class="weapon-top">
+                <div class="weapon-symbol">🔱</div>
+                <div><div class="weapon-name">长枪</div></div>
+                <div class="weapon-class">攻守兼具</div>
+            </div>
+            <div class="weapon-divider"></div>
+            <p class="weapon-desc">枪之道，攻守兼具。枪之势，不疾不徐。枪之威，扫彻宇内。枪之退，守正不移。</p>
+            <div class="weapon-stats">
+                <div class="weapon-stat"><div class="weapon-stat-val">93</div><div class="weapon-stat-label">攻 击</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">70</div><div class="weapon-stat-label">防 御</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">88</div><div class="weapon-stat-label">速 度</div></div>
+            </div>
+        </div>
+        <div class="weapon-card reveal">
+            <div class="weapon-top">
+                <div class="weapon-symbol">🪭</div>
+                <div><div class="weapon-name">折扇</div></div>
+                <div class="weapon-class">愈人心</div>
+            </div>
+            <div class="weapon-divider"></div>
+            <p class="weapon-desc">挥舞如椿霖，招招愈人心。持扇者内气外化，尤擅远攻之道。化气人体，亦可疗愈百骸，医人医己。</p>
+            <div class="weapon-stats">
+                <div class="weapon-stat"><div class="weapon-stat-val">75</div><div class="weapon-stat-label">攻 击</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">72</div><div class="weapon-stat-label">防 御</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">99</div><div class="weapon-stat-label">医 术</div></div>
+            </div>
+        </div>
+        <div class="weapon-card reveal">
+            <div class="weapon-top">
+                <div class="weapon-symbol">⚔⚔</div>
+                <div><div class="weapon-name">双刀</div></div>
+                <div class="weapon-class">一瞬制敌</div>
+            </div>
+            <div class="weapon-divider"></div>
+            <p class="weapon-desc">双刀伤敌之距虽短，然攻势甚疾。讲究一瞬制敌，逐个击破。江湖对阵，皆惧匹马战双刀也。</p>
+            <div class="weapon-stats">
+                <div class="weapon-stat"><div class="weapon-stat-val">95</div><div class="weapon-stat-label">攻 击</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">60</div><div class="weapon-stat-label">防 御</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">96</div><div class="weapon-stat-label">速 度</div></div>
+            </div>
+        </div>
+        <div class="weapon-card reveal">
+            <div class="weapon-top">
+                <div class="weapon-symbol">🗡</div>
+                <div><div class="weapon-name">陌刀</div></div>
+                <div class="weapon-class">横扫八方</div>
+            </div>
+            <div class="weapon-divider"></div>
+            <p class="weapon-desc">陌刀重而势沉，挥之稍慢。然其威甚巨，可破单枪匹马，亦可横扫八方。他人与之对招，如蚍蜉撼树。</p>
+            <div class="weapon-stats">
+                <div class="weapon-stat"><div class="weapon-stat-val">99</div><div class="weapon-stat-label">攻 击</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">80</div><div class="weapon-stat-label">防 御</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">60</div><div class="weapon-stat-label">速 度</div></div>
+            </div>
+        </div>
+        <div class="weapon-card reveal">
+            <div class="weapon-top">
+                <div class="weapon-symbol">🪢</div>
+                <div><div class="weapon-name">绳镖</div></div>
+                <div class="weapon-class">攻守自如</div>
+            </div>
+            <div class="weapon-divider"></div>
+            <p class="weapon-desc">绳镖为器，携之轻便，藏之无形，出则如风。远掷如流星赶月，近袭如灵蛇吐信，攻守自如，尽显侠之俊逸。</p>
+            <div class="weapon-stats">
+                <div class="weapon-stat"><div class="weapon-stat-val">88</div><div class="weapon-stat-label">攻 击</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">55</div><div class="weapon-stat-label">防 御</div></div>
+                <div class="weapon-stat"><div class="weapon-stat-val">97</div><div class="weapon-stat-label">速 度</div></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 武学门派 -->
+<section class="section-wrap school-section" id="schools">
+    <div class="section-title-group">
+        <div class="section-en">SCHOOLS OF MARTIAL ARTS</div>
+        <h2 class="section-cn">武 学 门 派</h2>
+    </div>
+    <div class="school-grid" id="schoolGrid">
+        <noscript>
+            <p style="text-align:center;color:#8f8877;padding:40px 0;letter-spacing:2px;">
+                武学门派列表需要开启 JavaScript 才能显示
+            </p>
+        </noscript>
+    </div>
+</section>
+
+<!-- 首领集 -->
+<section class="section-wrap boss-section" id="boss">
+    <div class="section-title-group">
+        <div class="section-en">BOSS COLLECTION</div>
+        <h2 class="section-cn">首 领 集</h2>
+    </div>
+    <div class="boss-cats" id="bossCats">
+        <noscript>
+            <p class="boss-empty">首领列表需要开启 JavaScript 才能显示</p>
+        </noscript>
+    </div>
+</section>
+
+<!-- 宗门百业 + 时间表 + 奖励机制 -->
+<section class="section-wrap sect-section" id="sect">
+    <div class="section-title-group">
+        <div class="section-en">XIAOYAOYIN · SECT CENTER</div>
+        <h2 class="section-cn">宗 门 百 业</h2>
+    </div>
+
+    <!-- 逍遥引 · 宗门牌匾 -->
+    <div class="sect-brand">
+        <div class="sect-brand-seal">逍</div>
+        <div>
+            <div class="sect-brand-name">逍遥引</div>
+            <div class="sect-brand-sub">XIAOYAOYIN · 燕云十六声 百业宗门</div>
+        </div>
+        <div class="sect-brand-tip">
+            入群请先改游戏名<br>
+            格式：<span style="color:var(--gold);">游戏名 ➕ 武学 ➕ 本职心法</span>
+        </div>
+    </div>
+
+    <!-- 宗门法规三卡片 -->
+    <div class="sect-grid">
+        <div class="sect-card reveal">
+            <span class="sect-tag red">入门须知</span>
+            <h3 class="sect-title">入 群 规 矩</h3>
+            <div class="sect-highlight important">
+                进群请务必修改游戏名！<br>
+                格式：<span class="hl-gold">游戏名 ➕ 武学 ➕ 本职心法</span>
+            </div>
+            <p class="sect-content">
+                <span class="hl-gold">示例格式：</span>
+                <span class="code-box">李逍遥·太玄经·北冥神功</span><br><br>
+                百业侠境与周本：<span class="hl-red">每周一晚 7:30</span> 组队开团！<br>
+                未赶上的别着急，晚一点都会补车，<br>
+                提前告知<span class="hl-gold">社主</span>几点有时间，单独安排即可。
+            </p>
+        </div>
+        <div class="sect-card reveal">
+            <span class="sect-tag gold">群内消息</span>
+            <h3 class="sect-title">群 待 办 & 搜 索</h3>
+            <div class="sect-highlight important">
+                重要消息会发群待办！<br>
+                <span class="hl-red">一定一定要点进去看！！！！！</span>
+            </div>
+            <p class="sect-content">
+                群内成员人数较多，聊天记录多。<br>
+                想知道<span class="hl-gold">@所有人</span>发了什么，<br>
+                可在<span class="code-box">聊天记录</span>中<br>
+                搜索关键词「<span class="hl-gold">@所有人</span>」快速定位。<br><br>
+                <span class="hl-red">⚠ 紧急通知、奖励发放、补车安排</span><br>
+                均通过群待办推送，切勿忽略！
+            </p>
+        </div>
+        <div class="sect-card reveal">
+            <span class="sect-tag jade">沟通规范</span>
+            <h3 class="sect-title">派 对 燕 语 阁</h3>
+            <div class="sect-highlight important">
+                进派对必须进入 <span class="hl-gold">「燕语阁」</span> ！！<br>
+                周一 / 周末尤为关键！！！
+            </div>
+            <p class="sect-content">
+                尤其是<span class="hl-red">周一</span>和<span class="hl-red">周末</span>：<br>
+                开<span class="hl-gold">百叶本</span>和<span class="hl-gold">百业战</span>时，<br>
+                <strong>必须</strong>在<span class="code-box">燕语阁</span>中<br>
+                进行沟通交流、协同作战！<br><br>
+                运货任务：回百业驻地直走找<span class="hl-gold">温无双</span>提交，<br>
+                缺材料可在百业群互相索要。
+            </p>
+        </div>
+    </div>
+
+    <!-- 活动时间表 -->
+    <div class="schedule-box" id="schedule">
+        <h3 class="schedule-head-title">◆ 活 动 时 间 表 ◆</h3>
+        <div class="schedule-daily">
+            <div class="schedule-daily-time">
+                <div class="t">19:30</div>
+                <div class="d">每 日</div>
+            </div>
+            <div class="schedule-daily-info">
+                <div class="n">🎭 每 晚 派 对 时 间 · 燕 语 阁</div>
+                <div class="s">宗门成员准时进入「燕语阁」派对，交流互动，增进情谊</div>
+            </div>
+        </div>
+        <div class="schedule-week">
+            <div class="schedule-week-header">周 一</div>
+            <div class="schedule-week-header">周 二</div>
+            <div class="schedule-week-header">周 三</div>
+            <div class="schedule-week-header">周 四</div>
+            <div class="schedule-week-header">周 五</div>
+            <div class="schedule-week-header">周 六</div>
+            <div class="schedule-week-header">周 日</div>
+
+            <div class="schedule-week-cell">
+                <div class="sched-time">19:30</div>
+                <div class="sched-event red-e">⚔ 百业侠境·周本</div>
+                <div class="sched-note">组队开团</div>
+                <span class="sched-tag r">燕语阁集合</span>
+            </div>
+            <div class="schedule-week-cell off-bg">
+                <div class="sched-time">20:00</div>
+                <div class="sched-event gold-e">🐉 破军杀将</div>
+                <div class="sched-note">BOSS讨伐</div>
+                <span class="sched-tag g">可改时间</span>
+            </div>
+            <div class="schedule-week-cell">
+                <div class="sched-time">20:00</div>
+                <div class="sched-event jade-e">🏆 一决高下</div>
+                <div class="sched-note">PVP竞技对决</div>
+                <span class="sched-tag j">PVP模式</span>
+            </div>
+            <div class="schedule-week-cell off-bg">
+                <div class="sched-time">20:00</div>
+                <div class="sched-event gold-e">🐉 破军杀将</div>
+                <div class="sched-note">BOSS讨伐再战</div>
+                <span class="sched-tag g">可改时间</span>
+            </div>
+            <div class="schedule-week-cell">
+                <div class="sched-time">20:00</div>
+                <div class="sched-event jade-e">🏆 一决高下</div>
+                <div class="sched-note">周末预热赛</div>
+                <span class="sched-tag j">PVP模式</span>
+            </div>
+            <div class="schedule-week-cell off-bg">
+                <div class="sched-time">全 天</div>
+                <div class="sched-event red-e">⚔ 百叶本/百业战</div>
+                <div class="sched-note">全员参战</div>
+                <span class="sched-tag r">燕语阁必进</span>
+            </div>
+            <div class="schedule-week-cell">
+                <div class="sched-time">全 天</div>
+                <div class="sched-event red-e">⚔ 百叶本/百业战</div>
+                <div class="sched-note">周末终极战</div>
+                <span class="sched-tag r">燕语阁必进</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 奖励机制 -->
+    <div class="section-title-group" style="margin-top:0; margin-bottom:55px;">
+        <div class="section-en">REWARD MECHANISM</div>
+        <h2 class="section-cn">奖 励 机 制</h2>
+    </div>
+    <div class="reward-grid" id="reward">
+        <div class="reward-card reveal">
+            <div class="reward-corner corner-blue">周 奖 励</div>
+            <div class="reward-head">
+                <div class="reward-icon"><span>📅</span></div>
+                <h3 class="reward-title">每 周 活 跃 奖</h3>
+            </div>
+            <div class="reward-prizes">
+                <div class="prize-line"><span class="prize-amt">30 元月卡</span><span class="prize-qty">× 3 份</span></div>
+                <div class="prize-line"><span class="prize-amt">6 元红包</span><span class="prize-qty">× 5 份</span></div>
+            </div>
+            <div class="reward-conds">
+                <div class="cond-line good">
+                    <div class="cond-mark">✓</div>
+                    <span>周活跃达到 <strong>3000+</strong> → 获得 6元 红包奖励</span>
+                </div>
+                <div class="cond-line best">
+                    <div class="cond-mark">★</div>
+                    <span>周活跃达到 <strong>5000+</strong> → 获得 30元 月卡奖励</span>
+                </div>
+            </div>
+        </div>
+        <div class="reward-card reveal">
+            <div class="reward-corner corner-gold">月 奖 励</div>
+            <div class="reward-head">
+                <div class="reward-icon"><span>⏱</span></div>
+                <h3 class="reward-title">每 月 持 久 奖</h3>
+            </div>
+            <div class="reward-prizes">
+                <div class="prize-line gold-line"><span class="prize-amt">258 元</span><span class="prize-qty">× 1 份 最高档</span></div>
+                <div class="prize-line gold-line"><span class="prize-amt">128 元</span><span class="prize-qty">× 2 份</span></div>
+            </div>
+            <div class="reward-conds">
+                <div class="cond-line good">
+                    <div class="cond-mark">✓</div>
+                    <span>月活跃达到 <strong>20000+</strong> → 获得 128元 奖励</span>
+                </div>
+                <div class="cond-line best">
+                    <div class="cond-mark">★</div>
+                    <span>月活跃达到 <strong>24000+</strong> → 获得 258元 豪华奖励</span>
+                </div>
+            </div>
+        </div>
+        <div class="reward-card reveal">
+            <div class="reward-corner corner-red">百 业 战</div>
+            <div class="reward-head">
+                <div class="reward-icon"><span>⚔</span></div>
+                <h3 class="reward-title">百 业 战 赛 季 奖</h3>
+            </div>
+            <div class="reward-prizes">
+                <div class="prize-line red-line"><span class="prize-amt">300 元红包</span><span class="prize-qty">全员 · 赛季金标奖励</span></div>
+                <div class="prize-line red-line"><span class="prize-amt">258 元自选</span><span class="prize-qty">指挥 · 赛季固定奖励</span></div>
+            </div>
+            <div class="reward-conds">
+                <div class="cond-line vip">
+                    <div class="cond-mark">♛</div>
+                    <span>百业战 <strong>赛季拿到金标</strong> → 全员 300元 红包！</span>
+                </div>
+                <div class="cond-line vip">
+                    <div class="cond-mark">♛</div>
+                    <span>百业战 <strong>指挥</strong> → 赛季固定 258元 自选奖励</span>
+                </div>
+            </div>
+        </div>
+        <div class="reward-card reveal">
+            <div class="reward-corner corner-jade">赛 季 奖</div>
+            <div class="reward-head">
+                <div class="reward-icon"><span>🏆</span></div>
+                <h3 class="reward-title">赛 季 特 别 贡 献 奖</h3>
+            </div>
+            <div class="reward-prizes">
+                <div class="prize-line jade-line"><span class="prize-amt">258 元自选</span><span class="prize-qty">赛季累积活跃最高</span></div>
+                <div class="prize-line jade-line"><span class="prize-amt">68 元自选</span><span class="prize-qty">百业战参与前2名</span></div>
+            </div>
+            <div class="reward-conds">
+                <div class="cond-line best">
+                    <div class="cond-mark">★</div>
+                    <span>赛季<strong>累积活跃最高者</strong> → 258元 自选奖励</span>
+                </div>
+                <div class="cond-line good">
+                    <div class="cond-mark">✓</div>
+                    <span>百业战<strong>中场MVP前2位</strong>（参与最多）→ 68元 自选</span>
+                </div>
+                <div class="cond-line pend">
+                    <div class="cond-mark">?</div>
+                    <span>爬塔奖励 → <strong>待定</strong>，敬请期待后续公告~</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="reward-notice">
+        <div class="ic">📜</div>
+        <p><strong style="color:var(--gold);">宗门奖励说明：</strong>所有奖励于每周日、每月底结算后统一发放，请各位侠客留意群内通知。周奖励于次周周五前发放，月奖励于次月10号前发放，赛季奖励于赛季结算后15个工作日内发放。所有奖励最终解释权归宗门所有，如有疑问请联系社主或群管理。</p>
+    </div>
+</section>
+
+<!-- 新闻中心 -->
+<section class="section-wrap news-section" id="news">
+    <div class="section-title-group">
+        <div class="section-en">LATEST NEWS</div>
+        <h2 class="section-cn">新 闻 中 心</h2>
+    </div>
+    <div class="news-wrap">
+        <div class="news-left">
+            <div class="news-left-tabs" data-tab-group="news">
+                <button class="news-tab active" data-tab="all">最新</button>
+                <button class="news-tab" data-tab="新闻">新闻</button>
+                <button class="news-tab" data-tab="公告">公告</button>
+                <button class="news-tab" data-tab="活动">活动</button>
+            </div>
+            <div class="news-list" id="newsList"></div>
+            <div class="news-more"><a href="#">查 看 更 多 ›</a></div>
+        </div>
+        <div class="news-right-banners">
+            <div class="big-banner">
+                <img src="assets/banner-big.jpg" alt="新版本主视觉" loading="lazy">
+                <div class="big-banner-overlay">
+                    <span class="banner-tag">◆ 新 版 本 ◆</span>
+                    <div class="banner-title">9月24日 新版本「平澜起风波」</div>
+                    <div class="banner-sub">杭州地图开放 · 全新套装上线 · 多重活动来袭</div>
+                </div>
+            </div>
+            <div class="small-banners">
+                <div class="small-banner">
+                    <img src="assets/banner-snake.jpg" alt="白蛇联动" loading="lazy">
+                    <div class="t">🔥 白蛇联动活动开启</div>
+                </div>
+                <div class="small-banner">
+                    <img src="assets/world-jiangnan.jpg" alt="杭州前瞻" loading="lazy">
+                    <div class="t">🏔 杭州2.0前瞻爆料</div>
+                </div>
+                <div class="small-banner">
+                    <img src="assets/banner-companion.jpg" alt="全新伙伴" loading="lazy">
+                    <div class="t">🎭 全新伙伴登场</div>
+                </div>
+                <div class="small-banner">
+                    <img src="assets/banner-video.jpg" alt="版本展望" loading="lazy">
+                    <div class="t">💎 版本展望视频</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 原生大碟 -->
+<section class="section-wrap media-section" id="media">
+    <div class="section-title-group">
+        <div class="section-en">ORIGINAL SOUNDTRACK</div>
+        <h2 class="section-cn">壁 纸 音 频</h2>
+    </div>
+    <div class="media-wrap">
+        <div class="album-cover">
+            <span class="album-label">原 生 大 碟</span>
+            <div class="album-name">不 见 山</div>
+            <div class="album-sub">燕云十六声 原生大碟 · YIDA 作曲</div>
+        </div>
+        <div>
+            <div class="music-list">
+                <div class="music-list-head">
+                    <h4>♪ 曲 目 列 表</h4>
+                    <span>点击曲目选中 · 音频待接入</span>
+                </div>
+                <div class="music-track reveal" tabindex="0" role="button" aria-pressed="false">
+                    <div class="track-num">01</div>
+                    <div class="track-info"><div class="n">不见山</div><div class="a">燕云十六声 / YIDA</div></div>
+                    <div class="track-play">▶</div>
+                    <div class="track-time">4:28</div>
+                </div>
+                <div class="music-track reveal" tabindex="0" role="button" aria-pressed="false">
+                    <div class="track-num">02</div>
+                    <div class="track-info"><div class="n">春江花月夜_樊楼歌舞</div><div class="a">燕云十六声 / YIDA</div></div>
+                    <div class="track-play">▶</div>
+                    <div class="track-time">3:56</div>
+                </div>
+                <div class="music-track reveal" tabindex="0" role="button" aria-pressed="false">
+                    <div class="track-num">03</div>
+                    <div class="track-info"><div class="n">登录曲</div><div class="a">燕云十六声 / YIDA</div></div>
+                    <div class="track-play">▶</div>
+                    <div class="track-time">2:15</div>
+                </div>
+                <div class="music-track reveal" tabindex="0" role="button" aria-pressed="false">
+                    <div class="track-num">04</div>
+                    <div class="track-info"><div class="n">归舟 - 河西剧情概念曲</div><div class="a">谭晶 / 燕云十六声</div></div>
+                    <div class="track-play">▶</div>
+                    <div class="track-time">4:47</div>
+                </div>
+                <div class="music-track reveal" tabindex="0" role="button" aria-pressed="false">
+                    <div class="track-num">05</div>
+                    <div class="track-info"><div class="n">河西</div><div class="a">燕云十六声 / YIDA</div></div>
+                    <div class="track-play">▶</div>
+                    <div class="track-time">5:12</div>
+                </div>
+                <div class="music-track reveal" tabindex="0" role="button" aria-pressed="false">
+                    <div class="track-num">06</div>
+                    <div class="track-info"><div class="n">开封城内变奏氛围</div><div class="a">燕云十六声 / YIDA / 星戈音乐</div></div>
+                    <div class="track-play">▶</div>
+                    <div class="track-time">3:38</div>
+                </div>
+                <div class="music-track reveal" tabindex="0" role="button" aria-pressed="false">
+                    <div class="track-num">07</div>
+                    <div class="track-info"><div class="n">凉州歌（中央民族乐团合作）</div><div class="a">燕云十六声 / 李尚谦 / YIDA</div></div>
+                    <div class="track-play">▶</div>
+                    <div class="track-time">4:05</div>
+                </div>
+                <div class="music-track reveal" tabindex="0" role="button" aria-pressed="false">
+                    <div class="track-num">08</div>
+                    <div class="track-info"><div class="n">来者何人也 - 公测宣传曲</div><div class="a">龚琳娜 / 燕云十六声</div></div>
+                    <div class="track-play">▶</div>
+                    <div class="track-time">3:22</div>
+                </div>
+                <div class="music-track reveal" tabindex="0" role="button" aria-pressed="false">
+                    <div class="track-num">09</div>
+                    <div class="track-info"><div class="n">凉州曲</div><div class="a">燕云十六声 / YIDA</div></div>
+                    <div class="track-play">▶</div>
+                    <div class="track-time">3:45</div>
+                </div>
+                <div class="music-track reveal" tabindex="0" role="button" aria-pressed="false">
+                    <div class="track-num">10</div>
+                    <div class="track-info"><div class="n">月儿满满照秦川</div><div class="a">燕云十六声 / YIDA</div></div>
+                    <div class="track-play">▶</div>
+                    <div class="track-time">4:10</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 加入百业 / 宗门招募 -->
+<section class="download-section" id="join">
+    <div class="download-inner">
+        <div class="download-tag">◆ 江 湖 招 募 ◆</div>
+        <h2 class="download-title">加 入 百 业</h2>
+        <div class="download-sub">
+            进群请先改游戏名，格式：<strong style="color:var(--gold);">游戏名 ➕ 武学 ➕ 本职心法</strong><br>
+            改好后联系社主，即可安排入宗。
+        </div>
+        <div class="download-buttons">
+            <button class="dl-btn dl-btn-gold" onclick="location.href='#sect'">入 群 规 矩</button>
+            <button class="dl-btn dl-btn-out" onclick="location.href='#schedule'">活 动 时 间 表</button>
+            <button class="dl-btn dl-btn-out" onclick="location.href='#sect'">奖 励 机 制</button>
+        </div>
+        <div class="dl-links">
+            <a href="#sect">入群改名格式</a>
+            <a href="#sect">燕语阁派对</a>
+            <a href="#sect">补车安排</a>
+            <a href="members.html">成员名录</a>
+        </div>
+    </div>
+</section>
+
+<!-- 页脚 -->
+<footer>
+    <div class="footer-top">
+        <div>
+            <div class="footer-brand-logo">
+                <div class="footer-brand-seal">逍</div>
+                <div class="footer-brand-title"><span>逍遥引</span> · 燕云十六声</div>
+            </div>
+            <p class="footer-brand-desc">
+                风起于青萍之末，浪成于微澜之间。<br>
+                我们致力于打造最真实的武侠江湖世界，让每一位玩家都能在这里找到属于自己的传奇。<br>
+                燕云大地上，你的故事才刚刚开始……
+            </p>
+            <div class="follow-wrap">
+                <div class="follow-item"><div class="ic">📱</div><div class="t">官方公众号</div></div>
+                <div class="follow-item"><div class="ic">💬</div><div class="t">官方QQ群</div></div>
+                <div class="follow-item"><div class="ic">🤝</div><div class="t">企微助手</div></div>
+                <div class="follow-item"><div class="ic">🔮</div><div class="t">小程序</div></div>
+            </div>
+        </div>
+        <div class="footer-col">
+            <h5>燕云世界</h5>
+            <ul>
+                <li><a href="#world">清河地图</a></li>
+                <li><a href="#world">开封地图</a></li>
+                <li><a href="#world">河西地图</a></li>
+                <li><a href="#world">不见山</a></li>
+                <li><a href="#world">江南地图</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h5>宗门中心</h5>
+            <ul>
+                <li><a href="#sect">入门规矩</a></li>
+                <li><a href="#sect">活动时间表</a></li>
+                <li><a href="#sect">奖励机制</a></li>
+                <li><a href="#sect">补车安排</a></li>
+                <li><a href="#sect">联系社主</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h5>联系我们</h5>
+            <ul>
+                <li><a href="#">官方论坛</a></li>
+                <li><a href="#">客服中心</a></li>
+                <li><a href="#">商务合作</a></li>
+                <li><a href="#">招贤纳士</a></li>
+                <li><a href="#news">最新公告</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <div class="age-tip">
+            <div class="age-tag">16+</div>
+            <div class="age-text">
+                <strong style="color:#aaa;">适龄提示：</strong>本游戏适合16岁（含）以上玩家娱乐<br>
+                抵制不良游戏 拒绝盗版游戏 注意自我保护 谨防受骗上当 适度游戏益脑 沉迷游戏伤身 合理安排时间 享受健康生活
+            </div>
+        </div>
+        <div class="footer-legal">
+            <span>© 2026 逍遥引 · 燕云十六声 宗门户站 · All Rights Reserved</span>
+            <span>浙ICP备案号：<a href="#">浙B2-20090185-40</a></span>
+            <span>国新出审〔2023〕1009号</span>
+            <span>ISBN 978-7-498-12461-6</span>
+            <a href="#">涉企侵权举报请点击举报 ›</a>
+            <a href="#">点击查看家长关爱平台 ›</a>
+        </div>
+    </div>
+</footer>
+
+<script src="assets/schools.js"></script>
+<script>
+/* ============================================================
+   导航滚动 / 平滑锚点 / 滚动淡入 / Tab 骨架 → 见 assets/base.js
+   这里只放本页特有的数据与渲染
+   ============================================================ */
+
+/* ---------- 燕云世界：6 个地区 ---------- */
+const WORLDS = {
+    qinghe: {
+        name: "清河", en: "QINGHE · THE FIRST STOP", tag: "第 一 站",
+        img: "assets/world-qinghe.jpg", pending: false,
+        desc: "清河，燕云大地的起点。山水相映，市井繁华，初入江湖的游侠在此启程。古桥横跨溪流，酒旗迎风招展，万千故事从此地悄然拉开序幕。鼓为律之枢，绫为舞之韵，跳珠撼玉，流风回雪。",
+        features: [["🏮", "初入江湖"], ["🎭", "樊楼歌舞"], ["⛩", "古刹寻踪"]],
+    },
+    kaifeng: {
+        name: "开封", en: "KAIFENG · THE CAPITAL", tag: "繁 华 之 都",
+        img: "assets/world-kaifeng.jpg", pending: false,
+        desc: "开封，北宋都城，天下枢衡。御街贯通南北，樊楼高耸入云，勾栏瓦舍彻夜不息。太学之中书声琅琅，州桥之上车马如龙。一城烟火，半部华胥。",
+        features: [["🏯", "御街州桥"], ["🍶", "樊楼夜市"], ["📜", "太学论道"]],
+    },
+    hexi: {
+        name: "河西", en: "HEXI · THE FRONTIER", tag: "边 塞 长 风",
+        img: "assets/world-hexi.jpg", pending: false,
+        desc: "河西，古道西风，黄沙万里。凉州孤城矗立于戈壁尽头，驼铃声声穿过烽燧与石窟。此地刀客最烈，烈马最疾，一场大风便是一场江湖。",
+        features: [["🐫", "丝路驼铃"], ["🏰", "凉州孤城"], ["🖼", "敦煌石窟"]],
+    },
+    bujianshan: {
+        name: "不见山", en: "BUJIANSHAN · THE HIDDEN", tag: "云 海 之 上",
+        img: "assets/world-bujianshan.jpg", pending: false,
+        desc: "不见山，终年隐于云海之下，非有缘者不可见。石阶千级直上山门，钟声自雾中来，又散于雾中。世人皆道此山无路，唯轻功绝顶者，能踏雾而行。",
+        features: [["⛰", "云海石阶"], ["🥋", "隐世山门"], ["🎐", "问道听钟"]],
+    },
+    jiangnan: {
+        name: "江南", en: "JIANGNAN · THE MIST", tag: "烟 雨 之 地",
+        img: "assets/world-jiangnan.jpg", pending: false,
+        desc: "江南，烟雨长廊，荷风十里。乌篷船摇过石桥，水榭楼台倒映涟漪。此地剑法最柔，柔中藏锋，一伞烟雨便可遮尽半生恩仇。",
+        features: [["🌧", "烟雨水乡"], ["🪷", "荷塘月色"], ["🛶", "乌篷听雨"]],
+    },
+    soon: {
+        name: "新地区", en: "COMING SOON", tag: "开 发 中",
+        img: "assets/world-bujianshan.jpg", pending: true,
+        desc: "新的疆域正在开凿。江湖再远，也终有抵达之日。敬请期待后续版本公告，届时将同步开放全新的主线剧情、门派与首领挑战。",
+        features: [["🔍", "全新主线"], ["🗡", "未知门派"], ["⏳", "敬请期待"]],
+    },
+};
+
+function applyWorld(key, initial){
+    const w = WORLDS[key] || WORLDS.qinghe;
+    const img = document.getElementById("worldImg");
+    if (img) {
+        img.src = w.img;
+        img.alt = w.name;
+    }
+    const fig = img && img.closest(".world-image");
+    if (fig) fig.classList.toggle("is-pending", !!w.pending);
+    setText("worldTag", w.tag);
+    setText("worldName", w.name);
+    setText("worldNameEn", w.en);
+    setText("worldDesc", w.desc);
+    const fw = document.getElementById("worldFeatures");
+    // 首次调用时 HTML 里已是清河的内容，交给滚动动画观察器处理，不重建
+    if (fw && !initial) {
+        fw.innerHTML = w.features.map(f =>
+            `<div class="world-feature reveal is-in">
+                <div class="world-feat-icon">${f[0]}</div>
+                <div class="world-feat-text">${f[1]}</div>
+            </div>`).join("");
+    }
+}
+function setText(id, txt){
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt;
+}
+
+/* ---------- 武学门派：4 大类 / 11 分支（数据见 assets/schools.js） ---------- */
+function renderSchools(){
+    const grid = document.getElementById("schoolGrid");
+    if (!grid) return;
+    if (!window.YANYUN_SCHOOLS) {
+        grid.innerHTML = `<p style="text-align:center;color:#8f8877;padding:40px 0;letter-spacing:2px;">武学门派数据加载失败</p>`;
+        return;
+    }
+    grid.innerHTML = YANYUN_SCHOOLS.map(s => `
+        <div class="school-card ${s.color} reveal">
+            <div class="school-head">
+                <div class="school-name">${s.name}</div>
+                <div class="school-name-en">${s.en}</div>
+                ${s.tag ? `<span class="school-tag">${s.tag}</span>` : ""}
+            </div>
+            <div class="school-branches">
+                ${s.branches.map(b => `
+                    <div class="school-branch">
+                        <div class="school-branch-head">
+                            <span class="b">${b.name}</span>
+                            <span class="sep">·</span>
+                            <span class="full">${s.name}·${b.name}</span>
+                        </div>
+                        <div class="school-xinfa">
+                            ${b.xinfa.map(x => `<span>${x}</span>`).join("")}
+                        </div>
+                        ${b.desc ? `<div class="school-desc">${b.desc}</div>` : ""}
+                    </div>`).join("")}
+            </div>
+        </div>`).join("");
+}
+
+/* ---------- 首领集：四类副本分组（名单按宗门给定的原始清单） ---------- */
+const BOSSES = [
+    {
+        no: '壹', color: 'gold',
+        name: '主线剧情首领', en: 'STORY BOSSES',
+        tip: '官方「首领展示」那一批',
+        art: 'assets/boss1.jpg',
+        groups: [
+            { name: '', list: ['小十七', '田英', '寻心', '叶万山', '道主', '无相皇', '容鸢', '千夜'] },
+        ],
+    },
+    {
+        no: '贰', color: 'jade',
+        name: '五人试剑副本', en: '5-PLAYER TRIAL',
+        tip: '五人本',
+        art: 'assets/boss2.jpg',
+        groups: [
+            { name: '', list: ['无相皇', '小十七', '睡道人', '容鸢', '舞狮', '鬼公子', '皮影戏', '黑财主'] },
+        ],
+    },
+    {
+        no: '叁', color: 'red',
+        name: '十人侠境', en: '10-PLAYER RAID',
+        tip: '团本 · 最常打的就是这一块',
+        art: 'assets/boss3.jpg',
+        groups: [
+            { name: '老侠境',     list: ['道主', '黑财神'] },
+            { name: '笑渡苦行舟', list: ['迷驿舟', '马戏团'] },
+            { name: '白驹飞霞',   list: ['舞马人', '冯如之'] },
+            { name: '白裳殁天狼', list: ['离思赋', '萧翰'] },
+            { name: '鬼蜮茧生花', list: ['裴航', '春蚕庄主', '不老春蛾'] },
+        ],
+    },
+    {
+        no: '肆', color: 'violet',
+        name: '野外首领', en: 'FIELD BOSSES',
+        tip: '大世界到处跑的那种',
+        art: 'assets/boss4.jpg',
+        groups: [
+            { name: '', list: ['玼兮瑳兮', '铁心蜈', '花毽魁主', '耶律阿不里', '苍', '天涯客丙申'] },
+        ],
+    },
+];
+
+function renderBosses(){
+    const box = document.getElementById('bossCats');
+    if (!box) return;
+    // const 声明是词法全局，不挂 window，所以用 typeof 判断而不是 window.BOSSES
+    if (typeof BOSSES === 'undefined' || !BOSSES.length) {
+        box.innerHTML = '<p class="boss-empty">首领数据加载失败</p>';
+        return;
+    }
+    box.innerHTML = BOSSES.map(cat => {
+        const count = cat.groups.reduce((s, g) => s + g.list.length, 0);
+        const rows = cat.groups.map(g => `
+            <div class="boss-group">
+                ${g.name ? `<div class="boss-group-name">${g.name}</div>` : ''}
+                <div class="boss-chips">
+                    ${g.list.map(n => `<span class="boss-chip">${n}</span>`).join('')}
+                </div>
+            </div>`).join('');
+        return `
+        <div class="boss-cat ${cat.color} reveal">
+            <div class="boss-body">
+                <div class="boss-cat-head">
+                    <div class="boss-cat-no">${cat.no}</div>
+                    <div>
+                        <div class="boss-cat-name">${cat.name}</div>
+                        <div class="boss-cat-en">${cat.en}</div>
+                        ${cat.tip ? `<div class="boss-cat-tip">${cat.tip}</div>` : ''}
+                    </div>
+                    <div class="boss-cat-count">${count} 位首领</div>
+                </div>
+                <div class="boss-rows">${rows}</div>
+            </div>
+            <div class="boss-cat-art" style="background-image:url('${cat.art}')" role="img" aria-label="${cat.name}"></div>
+        </div>`;
+    }).join('');
+}
+
+/* ---------- 新闻中心 ---------- */
+const NEWS = [
+    { m: "09月", d: "17", cat: "公告", title: "9月17日 2.8.0B版本「芳草意留人」更新公告", sub: "全新内容上线 · 多项优化与修复" },
+    { m: "09月", d: "10", cat: "新闻", title: "新一轮武学平衡优化思路分享 内含先琢测试改动一览", sub: "开发组公开武学调优方向说明" },
+    { m: "09月", d: "09", cat: "新闻", title: "倾杯酬云水，揽风濯闲身 全新和鸣套装上线", sub: "「九重春色」武学特效等同步上新！" },
+    { m: "09月", d: "06", cat: "新闻", title: "藏锋入局丨再探藏锋之道 局外养成与局内探索心得", sub: "助游侠书写专属藏锋志" },
+    { m: "09月", d: "04", cat: "公告", title: "9月4日 2.8.0A版本「芳草意留人」更新公告", sub: "版本详细内容一览" },
+    { m: "08月", d: "28", cat: "新闻", title: "又见新来燕，贺全球一亿游侠！", sub: "但有知音同舟渡，万里烟波不计程" },
+    { m: "05月", d: "19", cat: "活动", title: "ROG×燕云十六声 江湖争锋挑战赛热血启幕！", sub: "创意执笔，赢取枪神9Plus联名神装" },
+];
+
+// 首次渲染交给滚动动画观察器；之后切换 Tab 生成的节点直接显示，
+// 否则它们不会被 IntersectionObserver 观察到而永远停在 opacity:0
+let newsFirstRender = true;
+
+function renderNews(cat){
+    const el = document.getElementById("newsList");
+    if (!el) return;
+    const list = (!cat || cat === "all") ? NEWS : NEWS.filter(n => n.cat === cat);
+    if (!list.length) {
+        el.innerHTML = `<div style="padding:40px 0;text-align:center;color:#7a7464;font-size:14px;letter-spacing:2px;">该分类下暂无内容</div>`;
+        return;
+    }
+    const cls = newsFirstRender ? "news-item reveal" : "news-item reveal is-in";
+    newsFirstRender = false;
+    el.innerHTML = list.map(n => `
+        <div class="${cls}" tabindex="0" role="link">
+            <div class="news-date"><div class="m">${n.m}</div><div class="d">${n.d}</div></div>
+            <div>
+                <span class="news-cat-tag nt-${n.cat}">${n.cat}</span>
+                <span class="news-title">${n.title}</span>
+                <div class="news-subtitle">${n.sub}</div>
+            </div>
+            <div class="news-arrow">›</div>
+        </div>`).join("");
+}
+
+/* ---------- Tab → 数据联动 ---------- */
+document.addEventListener("tabchange", function(e){
+    if (e.detail.group === "world") applyWorld(e.detail.tab);
+    if (e.detail.group === "news")  renderNews(e.detail.tab);
+});
+
+/* ---------- 曲目选中（无音频文件，只做选中态，不假装播放） ---------- */
+function toggleTrack(t){
+    const on = t.classList.contains("is-playing");
+    document.querySelectorAll(".music-track.is-playing").forEach(x => {
+        x.classList.remove("is-playing");
+        x.setAttribute("aria-pressed", "false");
+        const ic = x.querySelector(".track-play");
+        if (ic) ic.textContent = "▶";
+    });
+    if (!on) {
+        t.classList.add("is-playing");
+        t.setAttribute("aria-pressed", "true");
+        const ic = t.querySelector(".track-play");
+        if (ic) ic.textContent = "❚❚";
+    }
+}
+document.addEventListener("click", function(e){
+    const t = e.target.closest(".music-track");
+    if (t) toggleTrack(t);
+});
+document.addEventListener("keydown", function(e){
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const t = e.target.closest && e.target.closest(".music-track");
+    if (t) { e.preventDefault(); toggleTrack(t); }
+});
+
+/* ---------- 新闻项键盘可达 ---------- */
+document.addEventListener("keydown", function(e){
+    if (e.key !== "Enter") return;
+    const item = e.target.closest && e.target.closest(".news-item");
+    if (item) item.click();
+});
+
+/* ---------- 首屏媒体：百业大合照 + 宣传视频 ----------
+   素材路径：
+     assets/group-photo.jpg  百业大合照（作首屏背景，缺失时露出山水底图）
+     assets/promo.mp4        百业宣传视频（就位后自动播放，缺失时静默回退）
+   两者都是「放进去就生效、不放也不影响现状」。 */
+function initHeroMedia(){
+    const v = document.getElementById('heroVideo');
+    const bg = document.querySelector('.hero-bg');
+    if (!v || !bg) return;
+
+    function ready(){
+        v.classList.add('is-ready');
+        bg.classList.add('has-video');
+        const pr = v.play();
+        if (pr && pr.catch) pr.catch(function(){ /* 自动播放被浏览器拦截时静默降级 */ });
+    }
+    if (v.readyState >= 3) ready();
+    v.addEventListener('canplay', ready, { once: true });
+    v.addEventListener('loadeddata', ready, { once: true });
+    // 不加 once：错误可能多次发生（切换源、重试），每次都确保退回图片态
+    v.addEventListener('error', function(){
+        v.classList.remove('is-ready');
+        bg.classList.remove('has-video');
+    });
+}
+
+renderSchools();
+renderBosses();
+renderNews("all");
+applyWorld("qinghe", true);
+initHeroMedia();
+</script>
+<script src="assets/base.js" defer></script>
+</body>
+</html>

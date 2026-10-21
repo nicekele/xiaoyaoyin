@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>打本统计 - 逍遥引 · 燕云十六声</title>
+    <meta name="description" content="逍遥引 · 燕云十六声百业宗门户站：宗门规矩、活动时间表、奖励机制、武学门派与成员数据。">
+    <meta name="theme-color" content="#0a0a0a">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%238b2323'/%3E%3Ctext x='16' y='23' font-size='20' text-anchor='middle' fill='%23f5f0e8' font-family='serif'%3E%E7%87%95%3C/text%3E%3C/svg%3E">
+    <script>document.documentElement.classList.add('js');</script>
+    <link rel="stylesheet" href="assets/base.css">
+    <style>
+        /* 范围+类型筛选 */
+        .filter-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 30px; gap: 20px; flex-wrap: wrap;
+        }
+        .range-tabs { display: flex; gap: 10px; flex-wrap: wrap; }
+        .range-tab {
+            padding: 9px 22px;
+            background: transparent;
+            border: 1px solid rgba(201,169,97,0.3);
+            color: #9a9383;
+            font-size: 13px; letter-spacing: 2.5px;
+            cursor: pointer; transition: all 0.3s; font-family: inherit;
+        }
+        .range-tab.active, .range-tab:hover {
+            background: var(--gold); border-color: var(--gold); color: var(--ink-black); font-weight: bold;
+        }
+        .type-filter { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .type-filter label { color: #8a8473; font-size: 13px; letter-spacing: 2px; }
+        .type-pill {
+            padding: 8px 18px;
+            font-size: 13px; letter-spacing: 2px;
+            cursor: pointer;
+            background: transparent;
+            border: 1px solid rgba(201,169,97,0.2);
+            color: #b5ad99;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+        .type-pill.active, .type-pill:hover {
+            background: rgba(201,169,97,0.1); border-color: var(--gold); color: var(--gold);
+        }
+
+        /* 概览卡片 */
+        .overview-grid {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; margin-bottom: 35px;
+        }
+        @media (max-width: 1100px){ .overview-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 640px){ .overview-grid { grid-template-columns: repeat(2, 1fr); } }
+        .overview-card {
+            padding: 22px 24px;
+            background: linear-gradient(180deg, #14120f, #0f0d0a);
+            border: 1px solid rgba(201,169,97,0.2);
+            position: relative; overflow: hidden;
+        }
+        .overview-card::before {
+            content: ""; position: absolute; top: 0; left: 0;
+            width: 5px; height: 100%;
+        }
+        .oc-hero::before { background: linear-gradient(180deg, var(--gold-light), var(--gold-deep)); }
+        .oc-week::before { background: linear-gradient(180deg, #6aa0e0, #3a6bb3); }
+        .oc-baiye::before { background: linear-gradient(180deg, var(--jade-light), var(--jade)); }
+        .oc-war::before { background: linear-gradient(180deg, var(--red-light), var(--red)); }
+        .oc-tower::before { background: linear-gradient(180deg, #e0b8d8, #a8629a); }
+        .oc-icon { position: absolute; top: 20px; right: 22px; font-size: 30px; opacity: 0.25; }
+        .oc-label { font-size: 12px; letter-spacing: 2.5px; color: #8a8473; margin-bottom: 10px; }
+        .oc-num {
+            font-size: 34px; font-weight: bold; color: var(--paper);
+            font-family: "Georgia", serif; line-height: 1.1;
+        }
+        .oc-num .unit { font-size: 13px; color: #8a8473; font-weight: normal; margin-left: 3px; font-family: inherit; }
+        .oc-hero .oc-num { color: var(--gold-light); }
+        .oc-week .oc-num { color: #a6c8e8; }
+        .oc-baiye .oc-num { color: var(--jade-light); }
+        .oc-war .oc-num { color: #f0b0b0; }
+        .oc-tower .oc-num { color: #e0b8d8; }
+        .oc-sub { font-size: 11px; color: #777; margin-top: 8px; letter-spacing: 0.5px; }
+
+        /* 两个panel */
+        .grid-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 25px; margin-bottom: 35px; align-items: start; }
+        @media (max-width: 1100px){ .grid-2 { grid-template-columns: 1fr; } }
+
+        /* 本页主题偏朱红：覆盖共享基座的金色标记 */
+        .page-head { background: radial-gradient(ellipse at center, rgba(139,35,35,0.08), transparent 70%); }
+        .panel-title::before { background: var(--red); margin-right: 10px; }
+        .w-tag { margin-left: 6px; }
+
+        /* 个人打本总数榜 */
+        .rank-table-wrap { overflow-x: auto; }
+        .rank-table {
+            width: 100%; border-collapse: collapse; min-width: 760px;
+        }
+        .rank-table th, .rank-table td {
+            padding: 13px 14px;
+            font-size: 13.5px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .rank-table thead th {
+            background: rgba(201,169,97,0.05);
+            border-bottom: 2px solid rgba(201,169,97,0.25);
+            color: var(--gold); letter-spacing: 2px; font-weight: bold;
+        }
+        .rank-table thead th:nth-child(2) { text-align: left; }
+        .rank-table tbody tr:hover { background: rgba(201,169,97,0.04); }
+        .rank-cell {
+            font-family: "Georgia", serif; font-weight: bold; font-size: 20px;
+            width: 56px;
+        }
+        .r1 { color: #fde047; text-shadow: 0 0 8px rgba(253,224,71,0.5); }
+        .r2 { color: #e5e7eb; }
+        .r3 { color: #b8860b; }
+        .rank-table .mem-name { text-align: left; }
+        .avatar {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--gold-deep), var(--red));
+            display: inline-flex; align-items: center; justify-content: center;
+            color: var(--paper); font-weight: bold; font-size: 13px;
+            vertical-align: middle; margin-right: 10px;
+        }
+        .mname { font-size: 15px; color: var(--paper); letter-spacing: 1px; vertical-align: middle; }
+        .num-cell { font-family: "Georgia", serif; font-size: 17px; font-weight: bold; letter-spacing: 0.3px; }
+        .total-c { color: var(--gold-light); font-size: 20px; }
+        .week-c { color: #a6c8e8; }
+        .bai-c { color: var(--jade-light); }
+        .war-c { color: #f0b0b0; }
+        .tow-c { color: #e0b8d8; }
+
+        /* 进度条（MVP 贡献度）*/
+        .mvp-bar {
+            width: 100%; height: 8px; background: #1a1714;
+            position: relative;
+            border: 1px solid rgba(201,169,97,0.08);
+            max-width: 100px; margin: 0 auto;
+        }
+        .mvp-bar span {
+            position: absolute; top: 0; left: 0; bottom: 0;
+            background: linear-gradient(90deg, var(--red-light), var(--gold));
+        }
+
+        /* MVP 阵容卡片 */
+        .mvp-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+            margin-bottom: 22px;
+        }
+        .mvp-card {
+            padding: 16px 18px;
+            background: rgba(10,10,10,0.5);
+            border: 1px solid rgba(201,169,97,0.15);
+            display: grid;
+            grid-template-columns: 50px 1fr auto;
+            gap: 12px;
+            align-items: center;
+            transition: all 0.3s; cursor: pointer;
+        }
+        .mvp-card:hover {
+            border-color: var(--gold); transform: translateY(-2px);
+            background: rgba(201,169,97,0.05);
+        }
+        .mvp-no {
+            width: 46px; height: 46px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: "Georgia", serif; font-weight: bold; font-size: 20px;
+            color: var(--gold);
+            border: 1px dashed var(--gold);
+        }
+        /* 名字与身份行不折行，避免「独孤惊/鸿」「本/月」这类断字 */
+        .mvp-name {
+            font-size: 15px; color: var(--paper); letter-spacing: 1px;
+            margin-bottom: 4px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .mvp-meta {
+            font-size: 11px; color: #888; letter-spacing: 0.5px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .mvp-card > div:nth-child(2) { min-width: 0; }
+        .mvp-val {
+            font-family: "Georgia", serif; font-size: 22px; font-weight: bold;
+            color: var(--gold-light);
+            white-space: nowrap;
+        }
+        .mvp-val small { color: #777; font-size: 11px; font-weight: normal; }
+
+        /* 本周副本记录时间轴 */
+        .log-panel .panel-title::before { background: #6aa0e0; }
+        .logs { display: flex; flex-direction: column; position: relative; }
+        .logs::before {
+            content: ""; position: absolute;
+            left: 22px; top: 8px; bottom: 8px; width: 2px;
+            background: linear-gradient(180deg, var(--gold), rgba(201,169,97,0.1));
+        }
+        .log-item {
+            position: relative;
+            display: grid;
+            grid-template-columns: 50px 1fr auto;
+            gap: 15px;
+            padding: 12px 0 12px 0;
+            padding-left: 10px;
+            align-items: center;
+        }
+        .log-dot {
+            position: relative;
+            width: 22px; height: 22px;
+            background: #0a0a0a;
+            border: 2px solid var(--gold);
+            margin: 0 auto;
+            transform: rotate(45deg);
+            z-index: 2;
+        }
+        .log-item.week .log-dot { border-color: #6aa0e0; background: #13213a; }
+        .log-item.baiye .log-dot { border-color: var(--jade-light); background: #0d2219; }
+        .log-item.war .log-dot { border-color: var(--red-light); background: #291014; }
+        .log-item.tower .log-dot { border-color: #e0b8d8; background: #2a1524; }
+        .log-info .name {
+            font-size: 14px; color: var(--paper); letter-spacing: 1px; margin-bottom: 3px;
+        }
+        .log-info .meta {
+            font-size: 11.5px; color: #7a7464; letter-spacing: 0.5px;
+        }
+        .log-amt {
+            font-family: "Georgia", serif;
+            font-size: 15px; font-weight: bold;
+            color: var(--gold);
+        }
+        .log-amt small { color: #666; font-weight: normal; font-size: 11px; margin-left: 3px; }
+        .log-item.week .log-amt { color: #a6c8e8; }
+        .log-item.baiye .log-amt { color: var(--jade-light); }
+        .log-item.war .log-amt { color: #f0b0b0; }
+        .log-item.tower .log-amt { color: #e0b8d8; }
+
+        /* 副本月度条形对比 */
+        .month-wrap {
+            margin-bottom: 30px;
+        }
+        .months {
+            display: grid;
+            grid-template-columns: 110px 1fr 90px 90px;
+            gap: 14px;
+            align-items: center;
+            row-gap: 11px;
+        }
+        .m-label {
+            font-size: 14px; color: #b5ad99; letter-spacing: 1px;
+            padding-right: 10px; text-align: right;
+        }
+        .m-track {
+            height: 22px; background: #1a1714;
+            position: relative; border: 1px solid rgba(201,169,97,0.08);
+            overflow: hidden;
+        }
+        .m-track .s1, .m-track .s2, .m-track .s3, .m-track .s4 {
+            position: absolute; top: 0; bottom: 0; left: 0;
+        }
+        .m-track .s1 { background: var(--jade-light); }
+        .m-track .s2 { background: #6aa0e0; }
+        .m-track .s3 { background: var(--red-light); }
+        .m-track .s4 { background: #e0b8d8; }
+        .m-people { font-family: "Georgia", serif; text-align: right; font-size: 14px; color: #aaa390; }
+        .m-amt { font-family: "Georgia", serif; text-align: right; font-size: 16px; color: var(--gold); font-weight: bold; }
+
+        /* 颜色说明 */
+        .legend {
+            display: flex; gap: 16px; justify-content: flex-end;
+            margin-top: 12px; font-size: 12px; color: #888; letter-spacing: 1px;
+            border-top: 1px dashed rgba(201,169,97,0.12);
+            padding-top: 14px; flex-wrap: wrap;
+        }
+        .legend span::before {
+            content: ""; display: inline-block; width: 14px; height: 10px;
+            margin-right: 6px; vertical-align: 1px;
+        }
+        .lg-1::before { background: var(--jade-light); }
+        .lg-2::before { background: #6aa0e0; }
+        .lg-3::before { background: var(--red-light); }
+        .lg-4::before { background: #e0b8d8; }
+
+        /* 副本类型结构（环形图 + 图例）
+           尺寸必须由 CSS 而非内联像素控制，否则小屏会被 220px 硬宽撑破整页 */
+        .type-struct {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 30px;
+            align-items: center;
+            min-width: 0;
+        }
+        .type-donut {
+            position: relative;
+            width: 220px; height: 220px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            justify-self: center;
+        }
+        .type-donut-hole {
+            position: absolute;
+            width: 150px; height: 150px;
+            border-radius: 50%;
+            background: #12100d;
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column;
+        }
+        .td-label { font-size: 11px; letter-spacing: 3px; color: #888; }
+        .td-val {
+            font-size: 40px; font-weight: bold;
+            font-family: var(--font-num); color: var(--paper);
+        }
+        .td-sub { font-size: 11px; color: #888; }
+        .type-legend { display: flex; flex-direction: column; gap: 15px; min-width: 0; }
+
+        @media (max-width: 1100px) {
+            .mvp-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 640px) {
+            .months { grid-template-columns: 80px 1fr 70px; }
+            .months > :nth-child(4n) { display: none; }
+            .oc-num { font-size: 28px; }
+            .rank-table th, .rank-table td { padding: 10px 8px; font-size: 12.5px; }
+            .type-struct { grid-template-columns: 1fr; gap: 22px; }
+            .type-donut { width: 178px; height: 178px; }
+            .type-donut-hole { width: 116px; height: 116px; }
+            .td-val { font-size: 30px; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="index.html" class="nav-logo">
+                <div class="nav-logo-seal">逍</div>
+                <div class="nav-logo-text"><span>逍遥引</span> · 燕云十六声</div>
+            </a>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">首页</a></li>
+                <li><a href="members.html">成员管理</a></li>
+                <li><a href="activity.html">活跃度</a></li>
+                <li><a href="online.html">在线时长</a></li>
+                <li><a href="runs.html" class="active">打本统计</a></li>
+                <li><a href="index.html#sect">宗门法规</a></li>
+                <li><a href="index.html#news">新闻</a></li>
+            </ul>
+        </div>
+        <button class="nav-toggle" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="navMenu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="nav-right">
+            <button class="nav-btn">📤 导出</button>
+            <button class="nav-btn nav-btn-primary">➕ 记一次打本</button>
+        </div>
+    </nav>
+
+    <div class="page-wrap">
+        <div class="page-head">
+            <div class="page-en">RAID & DUNGEON STATS</div>
+            <h1 class="page-cn">打 本 统 计</h1>
+        </div>
+
+        <!-- 筛选栏 -->
+        <div class="filter-bar">
+            <div class="range-tabs" data-tab-group="period">
+                <button class="range-tab" data-tab="week">本周</button>
+                <button class="range-tab active" data-tab="month">本月</button>
+                <button class="range-tab" data-tab="last">上月</button>
+                <button class="range-tab" data-tab="season">本赛季</button>
+            </div>
+            <div class="type-filter" data-tab-group="dtype">
+                <label>副本分类：</label>
+                <button class="type-pill active" data-tab="all">全部</button>
+                <button class="type-pill" data-tab="week">百业侠境·周本</button>
+                <button class="type-pill" data-tab="baiye">百叶本</button>
+                <button class="type-pill" data-tab="war">百业战</button>
+                <button class="type-pill" data-tab="pojun">破军杀将</button>
+                <button class="type-pill" data-tab="tower">爬塔挑战</button>
+            </div>
+        </div>
+
+        <!-- 5张概览卡片 -->
+        <div class="overview-grid">
+            <div class="overview-card oc-hero reveal">
+                <div class="oc-icon">⚔</div>
+                <div class="oc-label">总 打 本 次 数</div>
+                <div class="oc-num"><span id="ovTotal" data-count="542">542</span><span class="unit">次</span></div>
+                <div class="oc-sub" id="ovTotalSub">参与成员 98 人 · 周环比 ↑ 12%</div>
+            </div>
+            <div class="overview-card oc-week reveal">
+                <div class="oc-icon">🛡</div>
+                <div class="oc-label">百 业 侠 境 · 周 本</div>
+                <div class="oc-num"><span id="ovWeek" data-count="184">184</span><span class="unit">次</span></div>
+                <div class="oc-sub" id="ovWeekSub">平均每车 9.7 人 · 通关率 96%</div>
+            </div>
+            <div class="overview-card oc-baiye reveal">
+                <div class="oc-icon">📜</div>
+                <div class="oc-label">百 叶 本</div>
+                <div class="oc-num"><span id="ovBaiye" data-count="228">228</span><span class="unit">次</span></div>
+                <div class="oc-sub" id="ovBaiyeSub">周末集中发车 · 人均 1.9 次</div>
+            </div>
+            <div class="overview-card oc-war reveal">
+                <div class="oc-icon">🏴</div>
+                <div class="oc-label">百 业 战</div>
+                <div class="oc-num"><span id="ovWar" data-count="48">48</span><span class="unit">场</span></div>
+                <div class="oc-sub" id="ovWarSub">胜 31 场 / 胜率 <strong style="color:var(--gold);">64.6%</strong></div>
+            </div>
+            <div class="overview-card oc-tower reveal">
+                <div class="oc-icon">🗼</div>
+                <div class="oc-label">爬 塔 挑 战</div>
+                <div class="oc-num"><span id="ovTower" data-count="82">82</span><span class="unit">层</span></div>
+                <div class="oc-sub" id="ovTowerSub">最高纪录 82 层 · 待突破中</div>
+            </div>
+        </div>
+
+        <!-- 成员个人榜 + MVP阵容 -->
+        <div class="grid-2">
+            <div class="panel">
+                <div class="panel-head">
+                    <div>
+                        <div class="panel-title">成 员 个 人 打 本 次 数 榜</div>
+                        <div style="color:#777;font-size:12px;margin-top:6px;padding-left:14px;" id="rankHint">本月统计 · 点击表头可排序</div>
+                    </div>
+                    <div class="panel-sub" id="rankMeta">显示前 30 名 · 共 98 人参与</div>
+                </div>
+                <div class="rank-table-wrap">
+                    <table class="rank-table" id="rankTable">
+                        <thead>
+                            <tr>
+                                <th data-sort="rank">排名</th>
+                                <th data-sort="name" style="text-align:left;">成 员</th>
+                                <th data-sort="role">身份</th>
+                                <th data-sort="week" title="百业侠境·周本，每人每周最多 5 次">周本/周</th>
+                                <th data-sort="baiye">百叶本</th>
+                                <th data-sort="war">百业战</th>
+                                <th data-sort="tower">爬塔</th>
+                                <th data-sort="total">场次总计</th>
+                                <th data-sort="mvp">贡献度</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rankBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-head">
+                    <div class="panel-title">⭐ 本 月 MVP 阵 容</div>
+                    <div class="panel-sub">综合出勤+胜率+指挥</div>
+                </div>
+                <div class="mvp-grid" id="mvpGrid"></div>
+
+                <div style="border-top:1px dashed rgba(201,169,97,.15);padding-top:20px;">
+                    <div style="font-size:16px;font-weight:bold;letter-spacing:4px;color:var(--paper);margin-bottom:14px;">
+                        <span style="display:inline-block;width:4px;height:16px;background:var(--jade-light);margin-right:10px;"></span>
+                        胜 率 统 计
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:16px;">
+                        <div>
+                            <div style="display:flex;justify-content:space-between;font-size:13.5px;color:#d4c9b3;margin-bottom:7px;">
+                                <span>百业战 · 团队总胜率</span>
+                                <span style="color:var(--jade-light);font-weight:bold;">64.6%</span>
+                            </div>
+                            <div style="height:10px;background:#1a1714;border:1px solid rgba(201,169,97,.08);position:relative;">
+                                <span style="position:absolute;top:0;left:0;bottom:0;width:64.6%;background:linear-gradient(90deg,var(--jade),var(--jade-light));"></span>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display:flex;justify-content:space-between;font-size:13.5px;color:#d4c9b3;margin-bottom:7px;">
+                                <span>百业侠境 · 周本通关率</span>
+                                <span style="color:var(--gold);font-weight:bold;">96.0%</span>
+                            </div>
+                            <div style="height:10px;background:#1a1714;border:1px solid rgba(201,169,97,.08);position:relative;">
+                                <span style="position:absolute;top:0;left:0;bottom:0;width:96%;background:linear-gradient(90deg,var(--gold-deep),var(--gold-light));"></span>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display:flex;justify-content:space-between;font-size:13.5px;color:#d4c9b3;margin-bottom:7px;">
+                                <span>百叶本 · 成功运货率</span>
+                                <span style="color:#a6c8e8;font-weight:bold;">90.2%</span>
+                            </div>
+                            <div style="height:10px;background:#1a1714;border:1px solid rgba(201,169,97,.08);position:relative;">
+                                <span style="position:absolute;top:0;left:0;bottom:0;width:90.2%;background:linear-gradient(90deg,#3a6bb3,#6aa0e0);"></span>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display:flex;justify-content:space-between;font-size:13.5px;color:#d4c9b3;margin-bottom:7px;">
+                                <span>爬塔挑战 · 过层率</span>
+                                <span style="color:var(--red-light);font-weight:bold;">71.8%</span>
+                            </div>
+                            <div style="height:10px;background:#1a1714;border:1px solid rgba(201,169,97,.08);position:relative;">
+                                <span style="position:absolute;top:0;left:0;bottom:0;width:71.8%;background:linear-gradient(90deg,var(--red),var(--red-light));"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 月度副本对比 -->
+        <div class="panel month-wrap">
+            <div class="panel-head">
+                <div class="panel-title">近 6 个 月 副 本 对 比</div>
+                <div class="panel-sub">百叶 / 周本 / 百业战 / 爬塔</div>
+            </div>
+            <div class="months" id="months"></div>
+            <div class="legend">
+                <span class="lg-1">百叶本</span>
+                <span class="lg-2">百业侠境·周本</span>
+                <span class="lg-3">百业战</span>
+                <span class="lg-4">爬塔挑战</span>
+            </div>
+        </div>
+
+        <!-- 本周打本记录时间轴 -->
+        <div class="grid-2" style="grid-template-columns:1fr 1fr;">
+            <div class="panel log-panel">
+                <div class="panel-head">
+                    <div class="panel-title" id="logTitle">本 周 发 车 记 录</div>
+                    <div class="panel-sub" id="logMeta">最新 10 场</div>
+                </div>
+                <div class="logs" id="logs"></div>
+            </div>
+            <div class="panel">
+                <div class="panel-head">
+                    <div class="panel-title">📊 副 本 类 型 结 构</div>
+                    <div class="panel-sub" id="donutSub">本月 542 次</div>
+                </div>
+                <div class="type-struct">
+                    <div class="type-donut" id="typeDonut" style="background: conic-gradient(
+                            var(--jade-light) 0% 42.1%,
+                            #6aa0e0 42.1% 76%,
+                            var(--red-light) 76% 84.9%,
+                            #e0b8d8 84.9% 100%
+                        );">
+                        <div class="type-donut-hole">
+                            <div class="td-label">TOTAL</div>
+                            <div class="td-val" id="typeTotal">542</div>
+                            <div class="td-sub">总场次</div>
+                        </div>
+                    </div>
+                    <div class="type-legend" id="typeLegend"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="footer-bottom">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <span>© 2026 逍遥引 · 燕云十六声 宗门成员管理系统 · 打本统计模块</span>
+            <span>数据更新 2026-09-19 14:32 · <a href="#">导出Excel</a> · <a href="#">打印</a></span>
+        </div>
+    </div>
+
+<script>
+/* ============ 基础 ============ */
+const firstNames = ["李","上官","慕容","独孤","林","叶","顾","沈","萧","云","楚","风","陆","方","苏","南宫","赵","钱","吴","郑","王","冯","陈"];
+const givenNames = ["逍遥","问天","无忌","云轩","清风","惊鸿","逸尘","长夜","长歌","慕白","飞鸿","雪琪","灵儿","若曦","听雨","忘机","无言","天行","九歌","潇湘","寒江","飞羽","凌烟","无咎","破军"];
+const weapons = ["剑","刀","伞","枪","扇","拳","双刀","陌刀","绳镖"];
+function hashStr(s){ let h=0; for(const c of s) h=(h*31+c.charCodeAt(0))&0x7fffffff; return h; }
+
+/* 确定性名单：切换筛选时人物身份保持一致，不会乱跳 */
+const ROSTER = (() => {
+    const arr = [], set = new Set();
+    for (let i = 0; arr.length < 30; i++) {
+        const n = firstNames[(i * 7 + 3) % firstNames.length] + givenNames[(i * 11 + 5) % givenNames.length];
+        if (set.has(n)) continue;
+        set.add(n); arr.push(n);
+    }
+    return arr;
+})();
+
+/* 身份配额与成员管理一致：1 社长 / 1 副社 / 6 管理 / 20 学徒 / 其余社众。
+   本页只显示前 30 名，故按「打本能力」排布：领导在前、社众居中、学徒殿后。 */
+const ROLE_OF = i =>
+    i === 0 ? "社长" :
+    i === 1 ? "副社" :
+    i < 8  ? "管理" :
+    i < 26 ? "社众" :
+             "学徒";
+
+/* ============ 各时间范围 ============
+   counts = [百叶本, 周本, 百业战, 破军+爬塔]，total 由它求和，四张卡与环形图不会打架 */
+const PERIODS = {
+    week: {
+        label: "本周", scale: 0.185, people: 92, weeks: 1,
+        counts: [38, 102, 6, 9],
+        weekSub: "平均 9.7 人 / 车 · 通关率 96%",
+        baiyeSub: "周末集中发车 · 人均 0.4 次",
+        warSub: "胜 4 场 / 胜率 <strong style=\"color:var(--gold);\">66.7%</strong>",
+        towerSub: "最高纪录 82 层 · 待突破中",
+        totalSub: "参与成员 92 人 · 周环比 ↑ 12%",
+        hint: "本周统计 · 点击表头可排序",
+        logTitle: "本 周 发 车 记 录", logMeta: "最新 10 场",
+        logFilter: true,
+    },
+    month: {
+        label: "本月", scale: 1, people: 98, weeks: 4.3,
+        counts: [228, 441, 48, 82],
+        weekSub: "平均每车 9.7 人 · 通关率 96%",
+        baiyeSub: "周末集中发车 · 人均 2.3 次",
+        warSub: "胜 31 场 / 胜率 <strong style=\"color:var(--gold);\">64.6%</strong>",
+        towerSub: "最高纪录 82 层 · 待突破中",
+        totalSub: "参与成员 98 人 · 周环比 ↑ 12%",
+        hint: "本月统计 · 点击表头可排序",
+        logTitle: "本 周 发 车 记 录", logMeta: "最新 10 场",
+        logFilter: false,
+    },
+    last: {
+        label: "上月", scale: 0.993, people: 95, weeks: 4.3,
+        counts: [205, 430, 44, 76],
+        weekSub: "平均每车 9.5 人 · 通关率 94%",
+        baiyeSub: "周末集中发车 · 人均 2.2 次",
+        warSub: "胜 25 场 / 胜率 <strong style=\"color:var(--gold);\">56.8%</strong>",
+        towerSub: "最高纪录 76 层 · 已被超越",
+        totalSub: "参与成员 95 人 · 周环比 ↓ 3%",
+        hint: "上月统计 · 点击表头可排序",
+        logTitle: "上 月 发 车 记 录", logMeta: "最新 10 场",
+        logFilter: false,
+    },
+    season: {
+        label: "本赛季", scale: 6.29, people: 99, weeks: 13,
+        counts: [1180, 1420, 312, 498],
+        weekSub: "平均每车 9.8 人 · 通关率 95%",
+        baiyeSub: "累计发车 · 人均 11.9 次",
+        warSub: "胜 201 场 / 胜率 <strong style=\"color:var(--gold);\">64.4%</strong>",
+        towerSub: "赛季最高 82 层 · 冲层中",
+        totalSub: "参与成员 99 人 · 较上赛季 ↑ 9%",
+        hint: "本赛季统计 · 点击表头可排序",
+        logTitle: "赛 季 精 彩 战 报", logMeta: "最新 10 场",
+        logFilter: false,
+    },
+};
+
+const TYPE_META = [
+    { key: "baiye", name: "百叶本",           color: "var(--jade-light)" },
+    { key: "week",  name: "百业侠境·周本",     color: "#6aa0e0" },
+    { key: "war",   name: "百业战",           color: "var(--red-light)" },
+    { key: "other", name: "破军杀将 / 爬塔",   color: "#e0b8d8" },
+];
+
+/* ============ 榜单生成（确定性，随范围缩放） ============
+   weeks：该时间范围包含几周
+   百业侠境·周本按「每周次数」计，硬上限 5 次/周，
+   榜单该列显示每周次数，周期累计值只计入「场次总计」 */
+function buildRank(scale, weeks){
+    return ROSTER.map((name, i) => {
+        const s = hashStr(name);
+        const week = Math.min(5, Math.max(0, Math.round(5 - i / 6 - (s % 3))));
+        const weekTotal = Math.round(week * (weeks || 1));
+        const baiye = Math.max(0, Math.round((14 - Math.floor(i / 2.2) - (s % 5)) * scale));
+        const war   = Math.max(0, Math.round((i < 8 ? (4 + (s % 3)) : Math.max(0, 3 - Math.floor(i / 8))) * scale));
+        const tower = Math.max(0, Math.round((10 - Math.floor(i / 3) + (s % 3)) * scale));
+        return {
+            name,
+            weapon: weapons[s % weapons.length],
+            role: ROLE_OF(i),
+            week, baiye, war, tower,
+            total: weekTotal + baiye + war + tower,
+            mvp: Math.max(12, Math.round(100 - i * 2.5 - (s % 5))),
+        };
+    });
+}
+
+/* ============ 状态 ============ */
+let curPeriod = "month";
+let curType = "all";
+let sortKey = "total";
+let sortDir = -1;           // -1 desc
+let curRows = [];
+
+const TYPE_SORT_KEY = { week: "week", baiye: "baiye", war: "war", pojun: "tower", tower: "tower", all: "total" };
+
+function sortRows(rows){
+    const key = sortKey, dir = sortDir;
+    return rows.slice().sort((a, b) => {
+        if (key === "name") return a.name.localeCompare(b.name, "zh") * (dir > 0 ? 1 : -1);
+        if (key === "role") {
+            const o = { 社长:0, 副社:1, 管理:2, 社众:3, 学徒:4 };
+            return (o[a.role] - o[b.role]) * (dir > 0 ? 1 : -1);
+        }
+        // 排名：场次越多名次越靠前
+        if (key === "rank") return (b.total - a.total) * dir;
+        return (a[key] - b[key]) * dir;
+    });
+}
+
+function renderRank(){
+    const p = PERIODS[curPeriod];
+    const rows = sortRows(curRows);
+    const tb = document.getElementById("rankBody");
+    if (!tb) return;
+
+    // 选中某副本类型时，把该列高亮
+    const hl = curType === "all" ? null : TYPE_SORT_KEY[curType];
+
+    tb.innerHTML = rows.map((m, i) => {
+        const initial = m.name.slice(0, 2);
+        const rc = i === 0 ? 'r1' : (i === 1 ? 'r2' : i === 2 ? 'r3' : '');
+        const mark = k => hl === k
+            ? 'style="box-shadow:inset 0 0 0 1px rgba(201,169,97,.55);background:rgba(201,169,97,.07);"'
+            : '';
+        return `<tr>
+            <td class="rank-cell ${rc}">${i + 1}</td>
+            <td class="mem-name">
+                <span class="avatar">${initial}</span>
+                <span class="mname">${m.name}</span>
+                <span class="w-tag w-${m.weapon}">${m.weapon}</span>
+            </td>
+            <td><span class="role-tag role-${m.role}">${m.role}</span></td>
+            <td class="num-cell week-c" ${mark('week')}>${m.week}</td>
+            <td class="num-cell bai-c" ${mark('baiye')}>${m.baiye}</td>
+            <td class="num-cell war-c" ${mark('war')}>${m.war}</td>
+            <td class="num-cell tow-c" ${mark('tower')}>${m.tower}</td>
+            <td class="num-cell total-c" ${mark('total')}>${m.total}</td>
+            <td>
+                <div class="mvp-bar"><span style="width:${m.mvp}%;"></span></div>
+                <div style="font-size:11px;color:#888;margin-top:4px;">${m.mvp}%</div>
+            </td>
+        </tr>`;
+    }).join("");
+
+    document.querySelectorAll("#rankTable thead th").forEach(th => {
+        th.classList.remove("sort-asc", "sort-desc");
+        if (!th.dataset.sort) return;
+        if (th.dataset.sort === sortKey) {
+            th.classList.add(sortDir > 0 ? "sort-asc" : "sort-desc");
+            th.setAttribute("aria-sort", sortDir > 0 ? "ascending" : "descending");
+        } else {
+            th.setAttribute("aria-sort", "none");
+        }
+    });
+
+    const meta = document.getElementById("rankMeta");
+    if (meta) meta.textContent = `显示前 ${rows.length} 名 · 共 ${p.people} 人参与`;
+    const hint = document.getElementById("rankHint");
+    if (hint) hint.textContent = p.hint + (curType === "all" ? "" : ` · 已按「${btnLabel(curType)}」高亮`);
+    return rows;
+}
+
+function btnLabel(key){
+    const el = document.querySelector(`.type-pill[data-tab="${key}"]`);
+    return el ? el.textContent.trim() : key;
+}
+
+function renderMvp(rows){
+    const p = PERIODS[curPeriod];
+    const el = document.getElementById("mvpGrid");
+    if (!el) return;
+    el.innerHTML = rows.slice(0, 8).map((m, i) => {
+        const initial = m.name.slice(0, 2);
+        return `<div class="mvp-card">
+            <div class="mvp-no">${i + 1}</div>
+            <div>
+                <div class="mvp-name"><span class="avatar" style="width:28px;height:28px;font-size:11px;margin-right:7px;">${initial}</span>${m.name} <span class="w-tag w-${m.weapon}" style="padding:1px 6px;font-size:10px;">${m.weapon}</span></div>
+                <div class="mvp-meta">身份：${m.role} · ${p.label}出勤 ${m.total} 场</div>
+            </div>
+            <div class="mvp-val">${m.total}<small>场</small></div>
+        </div>`;
+    }).join("");
+}
+
+function renderDonut(counts){
+    const total = counts.reduce((a, b) => a + b, 0);
+    let acc = 0;
+    const stops = counts.map((c, i) => {
+        const from = acc; acc += c / total * 100;
+        return `${TYPE_META[i].color} ${from.toFixed(2)}% ${acc.toFixed(2)}%`;
+    }).join(", ");
+
+    const donut = document.getElementById("typeDonut");
+    if (donut) donut.style.background = `conic-gradient(${stops})`;
+    const tt = document.getElementById("typeTotal");
+    if (tt) tt.textContent = total.toLocaleString("en-US");
+    const ds = document.getElementById("donutSub");
+    if (ds) ds.textContent = `${PERIODS[curPeriod].label} ${total.toLocaleString("en-US")} 次`;
+
+    const lg = document.getElementById("typeLegend");
+    if (lg) {
+        lg.innerHTML = counts.map((c, i) => {
+            const pc = (c / total * 100).toFixed(1);
+            return `<div style="display:grid;grid-template-columns:14px 1fr auto;gap:12px;align-items:center;">
+                <span style="width:14px;height:14px;background:${TYPE_META[i].color};"></span>
+                <span style="color:#c9c1ae;font-size:14px;letter-spacing:1px;">${TYPE_META[i].name}</span>
+                <span style="font-size:22px;font-weight:bold;color:${TYPE_META[i].color};font-family:Georgia;">${c} <small style="color:#777;font-size:12px;font-weight:normal;">${pc}%</small></span>
+            </div>`;
+        }).join("");
+    }
+    return total;
+}
+
+function renderMonths(){
+    const el = document.getElementById("months");
+    if (!el) return;
+    const labels = ["4月","5月","6月","7月","8月","9月(今)"];
+    const data = [
+        [150, 115, 30, 42],
+        [172, 135, 34, 55],
+        [189, 150, 38, 60],
+        [210, 168, 42, 68],
+        [225, 180, 46, 74],
+        [228, 184, 48, 82],
+    ];
+    const maxM = Math.max(...data.map(m => m.reduce((a, b) => a + b, 0)));
+    let html = `<div style="font-size:12px;color:var(--gold);letter-spacing:2px;padding-right:10px;text-align:right;">月份</div>
+                <div style="font-size:12px;color:var(--gold);letter-spacing:2px;">副本分布对比</div>
+                <div style="font-size:12px;color:var(--gold);letter-spacing:2px;text-align:right;">参 与</div>
+                <div style="font-size:12px;color:var(--gold);letter-spacing:2px;text-align:right;">总场次</div>`;
+    labels.forEach((lbl, idx) => {
+        const [a, b, c, d] = data[idx];
+        const total = a + b + c + d;
+        const pBai = a / total * 100, pWeek = b / total * 100, pWar = c / total * 100;
+        const pct = Math.round(total / maxM * 100);
+        const ppl = Math.round(58 + pct * 0.38);
+        html += `<div class="m-label">${lbl}</div>
+                 <div class="m-track">
+                    <div class="s1" style="width:${pBai}%;"></div>
+                    <div class="s2" style="width:${pWeek}%; left:${pBai}%;"></div>
+                    <div class="s3" style="width:${pWar}%; left:${pBai + pWeek}%;"></div>
+                    <div class="s4" style="width:${100 - pBai - pWeek - pWar}%; left:${pBai + pWeek + pWar}%;"></div>
+                 </div>
+                 <div class="m-people">${ppl} 人</div>
+                 <div class="m-amt">${total}</div>`;
+    });
+    el.innerHTML = html;
+}
+
+const ALL_LOGS = [
+    ["week","9月19日","百业侠境·周本 #37","指挥：李·逍遥 · 25人满团 通关SS", 25, "用时 32m"],
+    ["war","9月18日","百业战 · 对阵『江湖夜雨』","指挥：独孤·云轩 · 76%支持率 胜", 40, "胜场 +1"],
+    ["baiye","9月18日","百叶本 #182","温无双运货 · 成功 12/12", 18, "满员"],
+    ["baiye","9月17日","百叶本 #181","运货 · 成功 11/12", 17, "1人掉线"],
+    ["week","9月16日","百业侠境·周本 #36","指挥：上官·雪琪 · 24人 通关S", 24, "30m"],
+    ["tower","9月15日","爬塔挑战 · 新纪录！","全员冲层 · 最高突破至 82 层", 31, "82 层 🏆"],
+    ["war","9月14日","百业战 · 对阵『听风楼』","指挥：独孤·云轩 · 惜败", 38, "负场"],
+    ["week","9月14日","百业侠境·周本 #35","指挥：叶·惊鸿 · 补车", 19, "补车"],
+    ["baiye","9月13日","百叶本 #180","运货 · 全员 12/12 完美", 16, "完美通关"],
+    ["tower","9月12日","破军杀将 · BOSS战","慕容·若曦改期 · 20:00场", 22, "讨伐成功"],
+];
+
+function renderLogs(){
+    const p = PERIODS[curPeriod];
+    const el = document.getElementById("logs");
+    if (!el) return;
+    // 选中「本周」时只保留本周（9/16 起）的记录
+    let list = ALL_LOGS;
+    if (curPeriod === "week") list = ALL_LOGS.slice(0, 5);
+    if (curPeriod === "season") list = ALL_LOGS;
+
+    let html = "";
+    list.forEach(l => {
+        const [type, date, name, meta, n, txt] = l;
+        html += `<div class="log-item ${type}">
+            <div><div class="log-dot"></div></div>
+            <div class="log-info">
+                <div class="name">${date} · ${name}</div>
+                <div class="meta">${meta} · 共 ${n} 人参与</div>
+            </div>
+            <div class="log-amt">${txt}</div>
+        </div>`;
+    });
+    el.innerHTML = html;
+
+    const t = document.getElementById("logTitle");
+    if (t) t.textContent = p.logTitle;
+    const m = document.getElementById("logMeta");
+    if (m) m.textContent = `最新 ${list.length} 场`;
+}
+
+function setNum(id, value){
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.setAttribute("data-count", value);
+    el.textContent = Number(value).toLocaleString("en-US");
+}
+function setText(id, html){
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+}
+
+function applyAll(){
+    const p = PERIODS[curPeriod];
+    const counts = p.counts;
+    const [baiye, week, war, other] = counts;
+    const total = baiye + week + war + other;
+
+    setNum("ovTotal", total);
+    setNum("ovWeek", week);
+    setNum("ovBaiye", baiye);
+    setNum("ovWar", war);
+    setNum("ovTower", other);
+    setText("ovTotalSub", p.totalSub);
+    setText("ovWeekSub", p.weekSub);
+    setText("ovBaiyeSub", p.baiyeSub);
+    setText("ovWarSub", p.warSub);
+    setText("ovTowerSub", p.towerSub);
+
+    // 概览卡按副本类型聚焦
+    document.querySelectorAll(".overview-card").forEach(c => {
+        c.style.opacity = "1";
+        c.style.filter = "none";
+    });
+    if (curType !== "all") {
+        const map = { week: "oc-week", baiye: "oc-baiye", war: "oc-war", pojun: "oc-tower", tower: "oc-tower" };
+        const keep = map[curType];
+        document.querySelectorAll(".overview-card").forEach(c => {
+            const hit = keep && c.classList.contains(keep);
+            c.style.opacity = hit ? "1" : "0.42";
+            c.style.filter = hit ? "none" : "grayscale(0.5)";
+        });
+    }
+
+    curRows = buildRank(p.scale, p.weeks);
+    renderRank();
+    renderMvp(curRows);
+    renderDonut(counts);
+    renderMonths();
+    renderLogs();
+}
+
+/* 表头排序（页面上写了「点击表头可排序」，这里真正实现） */
+document.querySelectorAll("#rankTable thead th[data-sort]").forEach(th => {
+    const doSort = () => {
+        const k = th.dataset.sort;
+        if (sortKey === k) {
+            sortDir *= -1;
+        } else {
+            sortKey = k;
+            // 数值列默认降序（多者在前），文字列默认升序
+            sortDir = (k === "name" || k === "role" || k === "rank") ? 1 : -1;
+        }
+        renderRank();
+    };
+    th.setAttribute("tabindex", "0");
+    th.setAttribute("role", "button");
+    th.addEventListener("click", doSort);
+    th.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); doSort(); }
+    });
+});
+
+// base.js 派发的 tabchange 事件
+document.addEventListener("tabchange", e => {
+    if (e.detail.group === "period") {
+        curPeriod = e.detail.tab;
+        applyAll();
+    } else if (e.detail.group === "dtype") {
+        curType = e.detail.tab;
+        // 选中具体副本时，榜单默认按该列降序
+        if (curType === "all") { sortKey = "total"; sortDir = -1; }
+        else {
+            sortKey = TYPE_SORT_KEY[curType] || "total";
+            sortDir = sortKey === "rank" ? 1 : -1;
+        }
+        applyAll();
+    }
+});
+
+applyAll();
+</script>
+<script src="assets/base.js" defer></script>
+</body>
+</html>
