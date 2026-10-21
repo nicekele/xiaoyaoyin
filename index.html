@@ -1718,6 +1718,8 @@
         }
         .wx-modal-tip strong { color: var(--gold); font-weight: 600; }
         body.wx-modal-open { overflow: hidden; }
+        #officialFollow { cursor: pointer; transition: transform .2s; }
+        #officialFollow:hover { transform: translateY(-3px); }
     </style>
 </head>
 <body>
@@ -2356,7 +2358,7 @@
                 燕云大地上，你的故事才刚刚开始……
             </p>
             <div class="follow-wrap">
-                <div class="follow-item"><div class="ic">📱</div><div class="t">官方公众号</div></div>
+                <div class="follow-item" id="officialFollow" role="button" tabindex="0"><div class="ic">📱</div><div class="t">官方公众号</div></div>
                 <div class="follow-item"><div class="ic">💬</div><div class="t">官方QQ群</div></div>
                 <div class="follow-item"><div class="ic">🤝</div><div class="t">企微助手</div></div>
                 <div class="follow-item"><div class="ic">🔮</div><div class="t">小程序</div></div>
@@ -2435,6 +2437,21 @@
     </div>
 </div>
 
+<!-- 官方公众号 · 扫码关注卡片 -->
+<div class="wx-modal" id="officialQrModal" aria-hidden="true">
+    <div class="wx-modal-mask" data-close></div>
+    <div class="wx-modal-card" role="dialog" aria-modal="true" aria-label="官方公众号">
+        <button class="wx-modal-close" data-close aria-label="关闭">&times;</button>
+        <div class="wx-modal-seal">逍</div>
+        <div class="wx-modal-title">官方公众号</div>
+        <div class="wx-modal-sub">XIAOYAOYIN · OFFICIAL ACCOUNT</div>
+        <div class="wx-modal-qr">
+            <img id="officialQrImg" src="assets/qr-official.jpg" alt="官方公众号二维码">
+        </div>
+        <div class="wx-modal-tip">微信扫一扫，关注 <strong>逍遥引</strong> 公众号</div>
+    </div>
+</div>
+
 <script src="assets/vendor/supabase.min.js"></script>
 <script src="assets/config.js"></script>
 <script src="assets/db.js"></script>
@@ -2484,6 +2501,29 @@ const CONTACT_OWNER = {
         document.body.classList.remove("wx-modal-open");
     }
     link && link.addEventListener("click", function (e) { e.preventDefault(); open(); });
+    modal.addEventListener("click", function (e) { if (e.target.hasAttribute("data-close")) close(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
+})();
+
+/* ---------- 官方公众号二维码卡片 ---------- */
+(function initOfficialQr() {
+    const modal = document.getElementById("officialQrModal");
+    const trigger = document.getElementById("officialFollow");
+    if (!modal || !trigger) return;
+    function open() {
+        modal.classList.add("is-open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("wx-modal-open");
+    }
+    function close() {
+        modal.classList.remove("is-open");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("wx-modal-open");
+    }
+    trigger.addEventListener("click", open);
+    trigger.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+    });
     modal.addEventListener("click", function (e) { if (e.target.hasAttribute("data-close")) close(); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
 })();
