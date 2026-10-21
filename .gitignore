@@ -3,3 +3,6 @@ Thumbs.db
 *.tmp
 *.log
 __pycache__/
+
+# 音频压缩前的原始备份，不进仓库
+assets/audio/_original/
