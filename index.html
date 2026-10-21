@@ -1626,6 +1626,98 @@
             footer { padding: 50px 20px 20px; }
             .age-tag { width: 44px; height: 44px; font-size: 16px; }
         }
+
+        /* ---------- 联系社主 · 弹出卡片 ---------- */
+        .wx-modal { position: fixed; inset: 0; z-index: 1200; display: none; }
+        .wx-modal.is-open { display: block; }
+        .wx-modal-mask {
+            position: absolute; inset: 0;
+            background: rgba(8, 8, 10, 0.72);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        .wx-modal-card {
+            position: relative;
+            width: min(340px, calc(100vw - 40px));
+            margin: 12vh auto 0;
+            padding: 34px 28px 28px;
+            background: linear-gradient(180deg, #17161a 0%, #101013 100%);
+            border: 1px solid rgba(201, 169, 97, 0.55);
+            border-radius: 12px;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6),
+                        0 0 0 1px rgba(201, 169, 97, 0.12) inset;
+            text-align: center;
+            animation: wxPop .28s cubic-bezier(.2, .9, .3, 1.2);
+        }
+        @keyframes wxPop {
+            from { opacity: 0; transform: translateY(18px) scale(.96); }
+            to   { opacity: 1; transform: none; }
+        }
+        .wx-modal-close {
+            position: absolute; top: 10px; right: 12px;
+            width: 30px; height: 30px;
+            background: none; border: none; cursor: pointer;
+            color: #8f8f96; font-size: 22px; line-height: 1;
+            border-radius: 50%; transition: color .2s;
+        }
+        .wx-modal-close:hover { color: var(--gold); }
+        .wx-modal-seal {
+            width: 52px; height: 52px; margin: 0 auto 14px;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid var(--gold); border-radius: 8px;
+            color: var(--gold); font-size: 26px; font-weight: 700;
+            letter-spacing: 0; text-indent: 0;
+        }
+        .wx-modal-title {
+            color: #f2e9d5; font-size: 21px; font-weight: 700;
+            letter-spacing: 6px; text-indent: 6px;
+        }
+        .wx-modal-sub {
+            color: #6f6f78; font-size: 10px;
+            letter-spacing: 2.5px; margin-top: 6px;
+        }
+        .wx-modal-wechat {
+            display: flex; align-items: center; justify-content: center;
+            gap: 10px; margin: 20px 0 4px;
+        }
+        .wx-modal-wechat .label {
+            color: #8f8f96; font-size: 13px; letter-spacing: 2px;
+        }
+        .wx-modal-wechat .value {
+            color: var(--gold-light); font-size: 15px; font-weight: 600;
+            letter-spacing: 1px; font-family: Consolas, monospace;
+        }
+        .wx-copy {
+            padding: 3px 10px; cursor: pointer;
+            background: none; border: 1px solid rgba(201, 169, 97, 0.5);
+            border-radius: 999px; color: var(--gold); font-size: 12px;
+            transition: background .2s, color .2s;
+        }
+        .wx-copy:hover { background: var(--gold); color: var(--ink-black); }
+        .wx-modal-qr { margin: 16px auto 0; }
+        .wx-modal-qr img {
+            display: block; width: 190px; height: 190px;
+            margin: 0 auto; padding: 10px;
+            background: #fff; border-radius: 10px;
+            border: 1px solid rgba(201, 169, 97, 0.4);
+        }
+        .wx-modal-qr img[hidden] { display: none; }
+        .wx-modal-qr-ph {
+            width: 190px; height: 190px; margin: 0 auto;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 8px;
+            border: 1px dashed rgba(201, 169, 97, 0.45);
+            border-radius: 10px; color: #77777f;
+            font-size: 13px; letter-spacing: 1px;
+        }
+        .wx-modal-qr-ph span { font-size: 10px; color: #55555c; }
+        .wx-modal-tip {
+            margin-top: 18px; padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+            color: #8f8f96; font-size: 12px; letter-spacing: 1px;
+        }
+        .wx-modal-tip strong { color: var(--gold); font-weight: 600; }
+        body.wx-modal-open { overflow: hidden; }
     </style>
 </head>
 <body>
@@ -2287,7 +2379,7 @@
                 <li><a href="#sect">活动时间表</a></li>
                 <li><a href="#sect">奖励机制</a></li>
                 <li><a href="#sect">补车安排</a></li>
-                <li><a href="#sect">联系社主</a></li>
+                <li><a href="#" id="contactOwnerLink">联系社主</a></li>
             </ul>
         </div>
         <div class="footer-col">
@@ -2320,6 +2412,29 @@
     </div>
 </footer>
 
+<!-- 联系社主 · 弹出卡片 -->
+<div class="wx-modal" id="contactOwnerModal" aria-hidden="true">
+    <div class="wx-modal-mask" data-close></div>
+    <div class="wx-modal-card" role="dialog" aria-modal="true" aria-label="联系社主">
+        <button class="wx-modal-close" data-close aria-label="关闭">&times;</button>
+        <div class="wx-modal-seal">逍</div>
+        <div class="wx-modal-title">联系社主</div>
+        <div class="wx-modal-sub">XIAOYAOYIN · OWNER CONTACT</div>
+        <div class="wx-modal-wechat">
+            <span class="label">微信号</span>
+            <span class="value" id="ownerWechat">待填写</span>
+            <button class="wx-copy" id="ownerWechatCopy" type="button" hidden>复制</button>
+        </div>
+        <div class="wx-modal-qr">
+            <img id="ownerQrImg" src="assets/wechat-qr.png" alt="社主微信二维码" hidden>
+            <div class="wx-modal-qr-ph" id="ownerQrPh">
+                二维码待放置<br><span>assets/wechat-qr.png</span>
+            </div>
+        </div>
+        <div class="wx-modal-tip">添加时请备注：<strong>游戏名 ➕ 武学 ➕ 本职心法</strong></div>
+    </div>
+</div>
+
 <script src="assets/vendor/supabase.min.js"></script>
 <script src="assets/config.js"></script>
 <script src="assets/db.js"></script>
@@ -2329,6 +2444,49 @@
    导航滚动 / 平滑锚点 / 滚动淡入 / Tab 骨架 → 见 assets/base.js
    这里只放本页特有的数据与渲染
    ============================================================ */
+
+/* ---------- 联系社主：微信号 / 二维码填在下面 ---------- */
+const CONTACT_OWNER = {
+    wechat: "",   // ← 例：'xiaoyaoyin666'，留空则显示「待填写」
+    qr: "assets/wechat-qr.png",  // ← 把二维码图片放到这个路径即可
+};
+(function initContactOwner() {
+    const modal = document.getElementById("contactOwnerModal");
+    if (!modal) return;
+    const link = document.getElementById("contactOwnerLink");
+    const wechatEl = document.getElementById("ownerWechat");
+    const copyBtn = document.getElementById("ownerWechatCopy");
+    const qrImg = document.getElementById("ownerQrImg");
+    const qrPh = document.getElementById("ownerQrPh");
+
+    if (CONTACT_OWNER.wechat) {
+        wechatEl.textContent = CONTACT_OWNER.wechat;
+        copyBtn.hidden = false;
+        copyBtn.addEventListener("click", function () {
+            navigator.clipboard.writeText(CONTACT_OWNER.wechat).then(function () {
+                copyBtn.textContent = "已复制";
+                setTimeout(function () { copyBtn.textContent = "复制"; }, 1500);
+            });
+        });
+    }
+    qrImg.src = CONTACT_OWNER.qr;
+    qrImg.addEventListener("load", function () { qrImg.hidden = false; qrPh.style.display = "none"; });
+    qrImg.addEventListener("error", function () { qrImg.hidden = true; qrPh.style.display = "flex"; });
+
+    function open() {
+        modal.classList.add("is-open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("wx-modal-open");
+    }
+    function close() {
+        modal.classList.remove("is-open");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("wx-modal-open");
+    }
+    link && link.addEventListener("click", function (e) { e.preventDefault(); open(); });
+    modal.addEventListener("click", function (e) { if (e.target.hasAttribute("data-close")) close(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
+})();
 
 /* ---------- 燕云世界：6 个地区 ---------- */
 const WORLDS = {
