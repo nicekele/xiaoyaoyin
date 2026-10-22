@@ -52,6 +52,17 @@
         signOut: function () {
             return client.auth.signOut().then(function (r) { throwIf(r.error, '退出'); return true; });
         },
+        /* 发送密码重置邮件（链接跳回本后台页） */
+        resetPassword: function (email) {
+            var redirect = location.href.split('#')[0];
+            return client.auth.resetPasswordForEmail(email, { redirectTo: redirect })
+                .then(function (r) { throwIf(r.error, '发送重置邮件'); return true; });
+        },
+        /* 在重置会话中设置新密码 */
+        updatePassword: function (password) {
+            return client.auth.updateUser({ password: password })
+                .then(function (r) { throwIf(r.error, '重置密码'); return r.data; });
+        },
 
         /* 当前用户档案（含 role）；未登录返回 null */
         me: function () {

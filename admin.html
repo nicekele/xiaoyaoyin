@@ -8,6 +8,8 @@
     <meta name="theme-color" content="#0a0a0a">
     <meta name="robots" content="noindex, nofollow">
     <script>document.documentElement.classList.add('js');</script>
+    <!-- 必须在 Supabase 脚本之前抓取：GoTrue 处理完会清空 URL hash -->
+    <script>window.__recoveryLanding = /type=recovery|error_description/.test(location.hash || "");</script>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%238b2323'/%3E%3Ctext x='16' y='23' font-size='20' text-anchor='middle' fill='%23f5f0e8' font-family='serif'%3E%E7%87%95%3C/text%3E%3C/svg%3E">
     <link rel="stylesheet" href="assets/base.css">
     <style>
@@ -320,7 +322,28 @@
                     <button class="btn btn-primary" type="submit">登 录</button>
                 </div>
                 <div class="msg" id="loginMsg"></div>
+                <p class="hint" style="border:none;padding:0;margin:12px 0 0;text-align:center;">
+                    <a href="#" id="forgotPassLink" style="color:var(--gold);text-decoration:none;">忘记密码？</a>
+                    —— 填登录邮箱后收重置邮件
+                </p>
             </form>
+
+            <!-- 密码重置：从邮件链接跳回后，在此设置新密码 -->
+            <div id="resetPanel" hidden style="margin-top:16px;padding-top:16px;border-top:1px dashed rgba(201,169,97,.25);">
+                <div style="color:var(--paper);letter-spacing:2px;margin-bottom:12px;">设 置 新 密 码</div>
+                <div class="field">
+                    <label for="rpPass">新密码</label>
+                    <input type="password" id="rpPass" autocomplete="new-password" required placeholder="至少 6 位">
+                </div>
+                <div class="field">
+                    <label for="rpPass2">再输一遍</label>
+                    <input type="password" id="rpPass2" autocomplete="new-password" required placeholder="确认新密码">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" type="button" id="btnSaveNewPass">保 存 新 密 码</button>
+                </div>
+                <div class="msg" id="rpMsg"></div>
+            </div>
 
             <!-- 注册（仅在无管理员或管理员操作时可用） -->
             <form id="signupForm" data-tab-panel="signup" data-tab-group="authtab" hidden>
@@ -624,6 +647,15 @@ function boot(){
     }
     anyAdminExists().then(function(hasAdmin){
         var signupTab = document.getElementById('tabSignup');
+        // 从密码重置邮件跳回：优先进入设置新密码，不走正常登录门
+        var h = location.hash || '';
+        if (window.__recoveryLanding || h.indexOf('type=recovery') !== -1 || h.indexOf('error_description') !== -1) {
+            showResetPanel();
+            if (h.indexOf('error_description') !== -1 || window.__recoveryError) {
+                setMsg('rpMsg', '链接已失效或过期，请重新点「忘记密码」再发一封。', 'err');
+            }
+            return;
+        }
         // 尚无管理员：开放注册（首个注册者成为管理员）
         // 已有管理员：注册标签隐藏，只有管理员登录后才能创建账号
         signupTab.hidden = hasAdmin;
@@ -673,6 +705,51 @@ document.getElementById('loginForm').addEventListener('submit', function(e){
         showAdmin(me);
     }).catch(function(err){
         setMsg('loginMsg', '登录失败：' + (err.message || '请检查邮箱和密码'), 'err');
+    });
+});
+
+/* ---------- 忘记密码：发重置邮件 ---------- */
+document.getElementById('forgotPassLink').addEventListener('click', function(e){
+    e.preventDefault();
+    var email = document.getElementById('liEmail').value.trim();
+    if (!email) {
+        setMsg('loginMsg', '请先在上方填写登录邮箱，再点「忘记密码」', 'err');
+        document.getElementById('liEmail').focus();
+        return;
+    }
+    setMsg('loginMsg', '正在发送重置邮件…');
+    DB.resetPassword(email).then(function(){
+        setMsg('loginMsg', '重置邮件已发送到 ' + email + '，请到邮箱点链接设置新密码。', 'ok');
+    }).catch(function(err){
+        setMsg('loginMsg', '发送失败：' + (err.message || '未知错误'), 'err');
+    });
+});
+
+/* ---------- 从重置邮件跳回：设置新密码 ---------- */
+function showResetPanel() {
+    showAuth('login');
+    document.getElementById('loginForm').hidden = true;
+    document.getElementById('resetPanel').hidden = false;
+    setMsg('rpMsg', '已进入重置模式，请设置新密码。', 'ok');
+}
+DB.client.auth.onAuthStateChange(function(event){
+    if (event === 'PASSWORD_RECOVERY') showResetPanel();
+});
+
+document.getElementById('btnSaveNewPass').addEventListener('click', function(){
+    var p1 = document.getElementById('rpPass').value;
+    var p2 = document.getElementById('rpPass2').value;
+    if (p1.length < 6) { setMsg('rpMsg', '密码至少 6 位', 'err'); return; }
+    if (p1 !== p2) { setMsg('rpMsg', '两次输入的密码不一致', 'err'); return; }
+    setMsg('rpMsg', '正在保存…');
+    DB.updatePassword(p1).then(function(){
+        setMsg('rpMsg', '新密码已生效，现在可以用它登录了。', 'ok');
+        document.getElementById('resetPanel').hidden = true;
+        document.getElementById('loginForm').hidden = false;
+        document.getElementById('rpPass').value = '';
+        document.getElementById('rpPass2').value = '';
+    }).catch(function(err){
+        setMsg('rpMsg', '设置失败：' + (err.message || '请重新从邮件链接进入'), 'err');
     });
 });
 
