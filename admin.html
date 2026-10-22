@@ -560,16 +560,12 @@
                 <div class="panel">
                     <div class="panel-title2">抽 奖 规 则</div>
                     <p class="hint" style="border:none;padding-top:0;margin-top:0;">
-                        成员<span style="color:var(--gold);">周活跃</span>达到门槛即可抽一次；<br>
-                        同一周内<span style="color:var(--gold);">同类奖品不重复</span>——抽中过「月卡」本周就不会再抽到月卡，但仍可抽中其他类型。<br>
-                        每周记录独立，下周自动重置可再抽。
+                        <span style="color:var(--gold);">6元红包</span>：周活跃 ≥3000 可抽，每周全宗门限 <b>5</b> 份<br>
+                        <span style="color:var(--gold);">30元月卡</span>：周活跃 ≥5000 可抽，每周全宗门限 <b>3</b> 份<br>
+                        同一人同一周<span style="color:var(--gold);">同类不重复</span>；份数抽完即止，下周自动重置。
                     </p>
                     <div class="field" style="margin-top:14px;">
-                        <label>活跃度门槛（周活跃 ≥）</label>
-                        <input type="number" id="lotThreshold" value="2000" min="0" step="100">
-                    </div>
-                    <div class="field">
-                        <label>奖池（点击可停用/启用；停用的不参与抽取）</label>
+                        <label>奖池（点击可停用/启用；显示剩余份数）</label>
                         <div id="lotPool" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
                     </div>
                     <div class="field">
@@ -1242,11 +1238,10 @@ document.getElementById('acctBody').addEventListener('click', function(e){
 });
 
 /* ---------- 周活跃抽奖 ---------- */
-/* 奖池：type 是防重复的唯一键，以后加奖品往这里追加即可 */
+/* 奖池配置：quota=每周全宗门总份数；minActive=抽取所需周活跃门槛 */
 var LOT_PRIZES = [
-    { type: 'month_card', name: '月卡' },
-    { type: 'cash6',      name: '6元红包' },
-    { type: 'skin6',      name: '6元皮肤' },
+    { type: 'month_card', name: '30元月卡', quota: 3, minActive: 5000 },
+    { type: 'cash6',      name: '6元红包',  quota: 5, minActive: 3000 },
 ];
 
 function lotWeekKey(){
@@ -1276,12 +1271,15 @@ function renderLotPool(){
     var off = lotDisabled();
     document.getElementById('lotPool').innerHTML = LOT_PRIZES.map(function(p){
         var isOff = off.indexOf(p.type) !== -1;
+        var used = lotWins.filter(function(w){ return w.prize_type === p.type; }).length;
+        var left = Math.max(0, (p.quota || 0) - used);
+        var label = p.name + '（需周活' + p.minActive + '）剩 ' + left + '/' + p.quota + (isOff ? ' · 已停用' : '');
         return '<span class="lot-chip' + (isOff ? ' off' : '') + '" data-lot-type="' + p.type + '" ' +
             'style="padding:5px 12px;border:1px solid ' + (isOff ? 'rgba(140,140,140,.35)' : 'rgba(201,169,97,.4)') + ';' +
-            'color:' + (isOff ? '#666' : 'var(--gold-light)') + ';font-size:13px;letter-spacing:1px;' +
+            'color:' + (isOff || !left ? '#666' : 'var(--gold-light)') + ';font-size:13px;letter-spacing:1px;' +
             'cursor:pointer;user-select:none;' + (isOff ? 'text-decoration:line-through;' : '') + '" ' +
             'title="' + (isOff ? '点击启用' : '点击停用') + '">' +
-            escapeHtml(p.name) + (isOff ? '（停用）' : '') + '</span>';
+            escapeHtml(label) + '</span>';
     }).join('');
 }
 
@@ -1338,30 +1336,47 @@ function loadLottery(){
     DB.listLotteryWins(lotWeekKey()).then(function(rows){
         lotWins = rows || [];
         renderLotWins();
+        renderLotPool();
     }).catch(function(e){
         setMsg('lotMsg', '记录读取失败（请确认已执行 schema.sql v4）：' + (e.message || e), 'err');
     });
 }
 
 document.getElementById('btnDraw').addEventListener('click', function(){
-    var threshold = Math.max(0, parseInt(document.getElementById('lotThreshold').value, 10) || 0);
     var sel = document.getElementById('lotMember');
     var mid = Number(sel.value);
     var m = lotMembers.find(function(x){ return x.id === mid; });
     if (!m) { setMsg('lotMsg', '请先选择成员', 'err'); return; }
-    if ((m.active || 0) < threshold) {
-        setMsg('lotMsg', '「' + m.name + '」周活跃 ' + (m.active || 0) + '，未达门槛 ' + threshold, 'err');
-        return;
-    }
-    /* 本周该成员已中的类型 + 已停用的类型 → 从奖池剔除，同类不重复 */
+
+    /* 该成员本周已中的类型 */
     var wonTypes = {};
     lotWins.forEach(function(w){ if (w.member_id === mid) wonTypes[w.prize_type] = true; });
-    var remain = LOT_PRIZES.filter(function(p){ return !wonTypes[p.type] && !isLotOff(p.type); });
+
+    /* 可抽条件：未停用 + 周活跃达标 + 本周总量未抽完 + 本人本周未中过此类型 */
+    var remain = LOT_PRIZES.filter(function(p){
+        if (isLotOff(p.type)) return false;
+        if ((m.active || 0) < (p.minActive || 0)) return false;
+        if (wonTypes[p.type]) return false;
+        var used = lotWins.filter(function(w){ return w.prize_type === p.type; }).length;
+        return used < (p.quota || 0);
+    });
+
     if (!remain.length) {
-        setMsg('lotMsg', '该成员本周可抽的奖品已抽完（或奖池已全部停用），下周再来', 'err');
+        /* 给出更具体的原因 */
+        var active = m.active || 0;
+        var anyQuotaLeft = LOT_PRIZES.some(function(p){
+            var used = lotWins.filter(function(w){ return w.prize_type === p.type; }).length;
+            return !isLotOff(p.type) && used < (p.quota || 0);
+        });
+        var msg;
+        if (active < 3000) msg = '「' + m.name + '」周活跃 ' + active + '，未达 3000 抽奖门槛';
+        else if (!anyQuotaLeft) msg = '本周所有奖品份数已抽完，下周重置';
+        else msg = '该成员本周可抽的奖品已全部中过（或已停用），下周再来';
+        setMsg('lotMsg', msg, 'err');
         document.getElementById('lotResult').textContent = '';
         return;
     }
+
     var prize = remain[Math.floor(Math.random() * remain.length)];
     setMsg('lotMsg', '抽取中…');
     document.getElementById('lotResult').textContent = '';
@@ -1374,10 +1389,11 @@ document.getElementById('btnDraw').addEventListener('click', function(){
     }).then(function(row){
         lotWins.unshift(row);
         renderLotWins();
+        renderLotPool();
         setMsg('lotMsg', '', '');
         document.getElementById('lotResult').textContent = '恭喜 ' + m.name + ' 抽中【' + prize.name + '】！';
     }).catch(function(err){
-        setMsg('lotMsg', '记录失败：' + (err.message || '权限不足，请确认已执行 schema.sql v4'), 'err');
+        setMsg('lotMsg', '记录失败：' + (err.message || '权限不足'), 'err');
     });
 });
 
