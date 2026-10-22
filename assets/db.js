@@ -42,11 +42,13 @@
             return client.auth.signInWithPassword({ email: email, password: password })
                 .then(function (r) { throwIf(r.error, '登录'); return r.data; });
         },
-        signUp: function (email, password, username) {
+        signUp: function (email, password, username, captchaToken) {
+            var options = { data: { username: username || email } };
+            if (captchaToken) options.captchaToken = captchaToken;
             return client.auth.signUp({
                 email: email,
                 password: password,
-                options: { data: { username: username || email } },
+                options: options,
             }).then(function (r) { throwIf(r.error, '注册'); return r.data; });
         },
         signOut: function () {

@@ -10,6 +10,8 @@
     <script>document.documentElement.classList.add('js');</script>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%238b2323'/%3E%3Ctext x='16' y='23' font-size='20' text-anchor='middle' fill='%23f5f0e8' font-family='serif'%3E%E7%87%95%3C/text%3E%3C/svg%3E">
     <link rel="stylesheet" href="assets/base.css">
+    <!-- hCaptcha：仅管理后台加载（注册/邀请防机器人） -->
+    <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
     <style>
         /* ====== 认证卡片 ====== */
         .auth-wrap {
@@ -319,6 +321,12 @@
                     <label for="suPass">密码</label>
                     <input type="password" id="suPass" autocomplete="new-password" required placeholder="至少 6 位">
                 </div>
+                <div class="field">
+                    <div class="h-captcha" id="hcSignup"
+                         data-sitekey="45266d88-b4c6-47f4-9f86-51c030e26b5e"
+                         data-callback="hcSignupCb"
+                         data-expired-callback="hcSignupExpired"></div>
+                </div>
                 <div class="form-actions">
                     <button class="btn btn-primary" type="submit">创 建 账 号</button>
                 </div>
@@ -471,6 +479,12 @@
                         <div class="field"><label>邮箱</label><input type="email" id="ivEmail" required placeholder="you@example.com"></div>
                         <div class="field"><label>显示名称</label><input id="ivName" required placeholder="如：副社·问天"></div>
                         <div class="field"><label>密码</label><input type="password" id="ivPass" required placeholder="至少 6 位"></div>
+                        <div class="field">
+                            <div class="h-captcha" id="hcInvite"
+                                 data-sitekey="45266d88-b4c6-47f4-9f86-51c030e26b5e"
+                                 data-callback="hcInviteCb"
+                                 data-expired-callback="hcInviteExpired"></div>
+                        </div>
                         <div class="form-actions">
                             <button class="btn btn-primary" type="submit">创 建 账 号</button>
                         </div>
@@ -639,14 +653,33 @@ document.getElementById('loginForm').addEventListener('submit', function(e){
 });
 
 /* ---------- 首个管理员注册 ---------- */
+/* hCaptcha token 暂存：widget 回调写入，提交时带上，过期清空 */
+var hcTokens = { signup: null, invite: null };
+window.hcSignupCb = function (t) { hcTokens.signup = t; };
+window.hcSignupExpired = function () { hcTokens.signup = null; };
+window.hcInviteCb = function (t) { hcTokens.invite = t; };
+window.hcInviteExpired = function () { hcTokens.invite = null; };
+function hcReset(which) {
+    try {
+        var id = which === 'invite' ? 'hcInvite' : 'hcSignup';
+        if (window.hcaptcha) hcaptcha.reset(document.getElementById(id));
+    } catch (e) { /* widget 未就绪时忽略 */ }
+    hcTokens[which] = null;
+}
+
 document.getElementById('signupForm').addEventListener('submit', function(e){
     e.preventDefault();
     var email = document.getElementById('suEmail').value.trim();
     var name = document.getElementById('suName').value.trim();
     var pass = document.getElementById('suPass').value;
     if (pass.length < 6) { setMsg('signupMsg', '密码至少 6 位', 'err'); return; }
+    if (window.hcaptcha && !hcTokens.signup) {
+        setMsg('signupMsg', '请先完成人机验证', 'err');
+        return;
+    }
     setMsg('signupMsg', '正在创建…');
-    DB.signUp(email, pass, name).then(function(res){
+    DB.signUp(email, pass, name, hcTokens.signup).then(function(res){
+        hcReset('signup');
         if (res && res.session) {
             setMsg('signupMsg', '注册成功，正在进入后台…', 'ok');
             return DB.me();
@@ -983,8 +1016,13 @@ document.getElementById('inviteForm').addEventListener('submit', function(e){
     var name = document.getElementById('ivName').value.trim();
     var pass = document.getElementById('ivPass').value;
     if (pass.length < 6) { setMsg('inviteMsg', '密码至少 6 位', 'err'); return; }
+    if (window.hcaptcha && !hcTokens.invite) {
+        setMsg('inviteMsg', '请先完成人机验证', 'err');
+        return;
+    }
     setMsg('inviteMsg', '正在创建账号…');
-    DB.signUp(email, pass, name).then(function(){
+    DB.signUp(email, pass, name, hcTokens.invite).then(function(){
+        hcReset('invite');
         setMsg('inviteMsg', '账号已创建。若开启了邮箱验证，需对方先点击邮箱确认链接才能登录。', 'ok');
         document.getElementById('inviteForm').reset();
         setTimeout(loadAccounts, 1200);
