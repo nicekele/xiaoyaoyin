@@ -576,12 +576,12 @@
                         <label>奖池（点击可停用/启用；显示剩余份数）</label>
                         <div id="lotPool" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
                     </div>
-                    <div class="field">
-                        <label>选择成员</label>
-                        <select id="lotMember"></select>
-                    </div>
+                    <p class="hint" style="border:none;padding:0;margin:4px 0 12px;">
+                        点击抽奖后，系统自动从<span style="color:var(--gold);">仍满足条件</span>的成员中随机抽取并出奖，无需手动选人。
+                        <span id="lotEligible"></span>
+                    </p>
                     <div class="form-actions">
-                        <button class="btn btn-primary" type="button" id="btnDraw">🎰 抽 一 次</button>
+                        <button class="btn btn-primary" type="button" id="btnDraw">🎰 自 动 抽 奖</button>
                     </div>
                     <div class="msg" id="lotMsg"></div>
                     <div id="lotResult" style="margin-top:14px;text-align:center;font-size:22px;letter-spacing:3px;color:var(--gold-light);min-height:32px;"></div>
@@ -1330,20 +1330,8 @@ document.getElementById('lotPool').addEventListener('click', function(e){
     if (i === -1) off.push(key); else off.splice(i, 1);
     saveLotDisabled(off);
     renderLotPool();
+    renderLotEligible();
 });
-
-function renderLotMemberSelect(){
-    var sel = document.getElementById('lotMember');
-    var actName = LOT_CYCLES[lotCycle].actName;
-    if (!lotMembers.length) {
-        sel.innerHTML = '<option value="">暂无成员</option>';
-        return;
-    }
-    sel.innerHTML = lotMembers.map(function(m){
-        return '<option value="' + m.id + '">' + escapeHtml(m.name || ('#' + m.id)) +
-            '（' + actName + ' ' + lotAct(m) + '）</option>';
-    }).join('');
-}
 
 function renderLotWins(){
     var tb = document.getElementById('lotBody');
@@ -1367,6 +1355,32 @@ function renderLotWins(){
     }).join('');
 }
 
+function renderLotEligible(){
+    var el = document.getElementById('lotEligible');
+    if (!el) return;
+    var n = lotCandidateList().length;
+    el.innerHTML = n
+        ? '<br>当前仍有 <b style="color:var(--gold);">' + n + '</b> 人可抽奖。'
+        : '<br>当前没有仍可抽奖的成员。';
+}
+
+function lotCandidateList(){
+    var out = [];
+    lotMembers.forEach(function(m){
+        var wonTypes = {};
+        lotWins.forEach(function(w){ if (w.member_id === m.id) wonTypes[w.prize_type] = true; });
+        var remain = lotPrizes().filter(function(p){
+            if (isLotOff(p.type)) return false;
+            if (lotAct(m) < (p.minActive || 0)) return false;
+            if (wonTypes[p.type]) return false;
+            var used = lotWins.filter(function(w){ return w.prize_type === p.type; }).length;
+            return used < (p.quota || 0);
+        });
+        if (remain.length) out.push({ m: m, remain: remain });
+    });
+    return out;
+}
+
 function loadLottery(){
     if (!window.DB) return;
     document.getElementById('btnCycleWeek').className = lotCycle === 'week' ? 'btn btn-primary' : 'btn';
@@ -1374,7 +1388,7 @@ function loadLottery(){
     renderLotPool();
     DB.listMembers().then(function(rows){
         lotMembers = rows || [];
-        renderLotMemberSelect();
+        renderLotEligible();
     }).catch(function(e){
         setMsg('lotMsg', '成员读取失败：' + (e.message || e), 'err');
     });
@@ -1382,6 +1396,7 @@ function loadLottery(){
         lotWins = rows || [];
         renderLotWins();
         renderLotPool();
+        renderLotEligible();
     }).catch(function(e){
         setMsg('lotMsg', '记录读取失败（请确认已执行 schema.sql）：' + (e.message || e), 'err');
     });
@@ -1398,47 +1413,23 @@ document.getElementById('btnCycleWeek').addEventListener('click', function(){ lo
 document.getElementById('btnCycleMonth').addEventListener('click', function(){ lotSwitchCycle('month'); });
 
 document.getElementById('btnDraw').addEventListener('click', function(){
-    var sel = document.getElementById('lotMember');
-    var mid = Number(sel.value);
-    var m = lotMembers.find(function(x){ return x.id === mid; });
-    if (!m) { setMsg('lotMsg', '请先选择成员', 'err'); return; }
     var cyc = LOT_CYCLES[lotCycle];
-
-    /* 该成员本周期已中的类型 */
-    var wonTypes = {};
-    lotWins.forEach(function(w){ if (w.member_id === mid) wonTypes[w.prize_type] = true; });
-
-    /* 可抽条件：未停用 + 活跃达标 + 本周期总量未抽完 + 本人本周期未中过此类型 */
-    var remain = lotPrizes().filter(function(p){
-        if (isLotOff(p.type)) return false;
-        if (lotAct(m) < (p.minActive || 0)) return false;
-        if (wonTypes[p.type]) return false;
-        var used = lotWins.filter(function(w){ return w.prize_type === p.type; }).length;
-        return used < (p.quota || 0);
-    });
-
-    if (!remain.length) {
-        var act = lotAct(m);
-        var minGate = Math.min.apply(null, lotPrizes().map(function(p){ return p.minActive || 0; }));
-        var anyQuotaLeft = lotPrizes().some(function(p){
-            var used = lotWins.filter(function(w){ return w.prize_type === p.type; }).length;
-            return !isLotOff(p.type) && used < (p.quota || 0);
-        });
-        var msg;
-        if (act < minGate) msg = '「' + m.name + '」' + cyc.actName + ' ' + act + '，未达 ' + minGate + ' 抽奖门槛';
-        else if (!anyQuotaLeft) msg = cyc.label + '所有奖品份数已抽完，下个周期重置';
-        else msg = '该成员' + cyc.label + '可抽的奖品已全部中过（或已停用），下个周期再来';
-        setMsg('lotMsg', msg, 'err');
+    var cands = lotCandidateList();
+    if (!cands.length) {
+        setMsg('lotMsg', cyc.label + '没有仍可抽奖的成员（活跃未达标 / 份数已抽完 / 已停用）', 'err');
         document.getElementById('lotResult').textContent = '';
         return;
     }
+    /* 先随机选人，再从该成员可抽的奖里随机出奖 */
+    var pick = cands[Math.floor(Math.random() * cands.length)];
+    var prize = pick.remain[Math.floor(Math.random() * pick.remain.length)];
+    var m = pick.m;
 
-    var prize = remain[Math.floor(Math.random() * remain.length)];
     setMsg('lotMsg', '抽取中…');
     document.getElementById('lotResult').textContent = '';
     DB.addLotteryWin({
-        member_id: mid,
-        member_name: m.name || ('#' + mid),
+        member_id: m.id,
+        member_name: m.name || ('#' + m.id),
         prize_type: prize.type,
         prize_name: prize.name,
         week_key: lotCycleKey(),
@@ -1446,6 +1437,7 @@ document.getElementById('btnDraw').addEventListener('click', function(){
         lotWins.unshift(row);
         renderLotWins();
         renderLotPool();
+        renderLotEligible();
         setMsg('lotMsg', '', '');
         document.getElementById('lotResult').textContent = '恭喜 ' + m.name + ' 抽中【' + prize.name + '】！';
     }).catch(function(err){
