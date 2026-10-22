@@ -406,6 +406,7 @@
             <button type="button" data-tab="members" class="active">成员管理</button>
             <button type="button" data-tab="posts">内容发布</button>
             <button type="button" data-tab="invite">账号管理</button>
+            <button type="button" data-tab="lottery">周活跃抽奖</button>
         </div>
 
         <!-- 成员管理 -->
@@ -549,6 +550,48 @@
                         </table>
                     </div>
                     <p class="hint">只有管理员能授予/收回管理员权限；被授予者即可登录本后台管理成员与内容。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 周活跃抽奖 -->
+        <div data-tab-panel="lottery" data-tab-group="maintab" hidden>
+            <div class="grid-2">
+                <div class="panel">
+                    <div class="panel-title2">抽 奖 规 则</div>
+                    <p class="hint" style="border:none;padding-top:0;margin-top:0;">
+                        成员<span style="color:var(--gold);">周活跃</span>达到门槛即可抽一次；<br>
+                        同一周内<span style="color:var(--gold);">同类奖品不重复</span>——抽中过「月卡」本周就不会再抽到月卡，但仍可抽中其他类型。<br>
+                        每周记录独立，下周自动重置可再抽。
+                    </p>
+                    <div class="field" style="margin-top:14px;">
+                        <label>活跃度门槛（周活跃 ≥）</label>
+                        <input type="number" id="lotThreshold" value="2000" min="0" step="100">
+                    </div>
+                    <div class="field">
+                        <label>奖池（同类型每周每人限中一次）</label>
+                        <div id="lotPool" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                    </div>
+                    <div class="field">
+                        <label>选择成员</label>
+                        <select id="lotMember"></select>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary" type="button" id="btnDraw">🎰 抽 一 次</button>
+                    </div>
+                    <div class="msg" id="lotMsg"></div>
+                    <div id="lotResult" style="margin-top:14px;text-align:center;font-size:22px;letter-spacing:3px;color:var(--gold-light);min-height:32px;"></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-title2">本 周 中 奖 记 录</div>
+                    <p class="hint" style="border:none;padding-top:0;margin-top:0;" id="lotWeekKey">加载中…</p>
+                    <div class="table-wrap">
+                        <table class="tbl">
+                            <thead><tr><th>成员</th><th>奖品</th><th>时间</th><th>操作</th></tr></thead>
+                            <tbody id="lotBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="hint">撤销记录后，该成员可重新抽取此类型奖品。</p>
                 </div>
             </div>
         </div>
@@ -868,6 +911,7 @@ function loadAll(){
     loadMembers();
     loadPosts();
     loadAccounts();
+    loadLottery();
 }
 
 /* 成员列表 */
@@ -1195,6 +1239,136 @@ document.getElementById('acctBody').addEventListener('click', function(e){
         .catch(function(err){
             alert('设置失败：' + (err.message || '权限不足'));
         });
+});
+
+/* ---------- 周活跃抽奖 ---------- */
+/* 奖池：type 是防重复的唯一键，以后加奖品往这里追加即可 */
+var LOT_PRIZES = [
+    { type: 'month_card', name: '月卡' },
+    { type: 'cash6',      name: '6元红包' },
+    { type: 'skin6',      name: '6元皮肤' },
+];
+
+function lotWeekKey(){
+    var d = new Date();
+    var t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    var day = t.getUTCDay() || 7;
+    t.setUTCDate(t.getUTCDate() + 4 - day);
+    var y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+    var w = Math.ceil(((t - y0) / 86400000 + 1) / 7);
+    return t.getUTCFullYear() + '-W' + ('0' + w).slice(-2);
+}
+
+var lotMembers = [];
+var lotWins = [];
+
+function renderLotPool(){
+    document.getElementById('lotPool').innerHTML = LOT_PRIZES.map(function(p){
+        return '<span style="padding:5px 12px;border:1px solid rgba(201,169,97,.4);color:var(--gold-light);font-size:13px;letter-spacing:1px;">' + escapeHtml(p.name) + '</span>';
+    }).join('');
+}
+
+function renderLotMemberSelect(){
+    var sel = document.getElementById('lotMember');
+    if (!lotMembers.length) {
+        sel.innerHTML = '<option value="">暂无成员</option>';
+        return;
+    }
+    sel.innerHTML = lotMembers.map(function(m){
+        return '<option value="' + m.id + '">' + escapeHtml(m.name || ('#' + m.id)) + '（周活跃 ' + (m.active || 0) + '）</option>';
+    }).join('');
+}
+
+function renderLotWins(){
+    var tb = document.getElementById('lotBody');
+    document.getElementById('lotWeekKey').textContent = '当前周期：' + lotWeekKey() + '（每周自动重置）';
+    if (!lotWins.length) {
+        tb.innerHTML = '<tr><td colspan="4" class="empty">本周暂无中奖记录</td></tr>';
+        return;
+    }
+    tb.innerHTML = lotWins.map(function(w){
+        var t = w.created_at ? new Date(w.created_at) : null;
+        var ts = t ? (t.getMonth() + 1) + '/' + t.getDate() + ' ' + ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2) : '—';
+        return '<tr>' +
+            '<td style="color:var(--paper)">' + escapeHtml(w.member_name) + '</td>' +
+            '<td style="color:var(--gold-light)">' + escapeHtml(w.prize_name) + '</td>' +
+            '<td style="color:#8f8877">' + ts + '</td>' +
+            '<td><button class="op danger" data-lot-del="' + w.id + '">撤销</button></td>' +
+        '</tr>';
+    }).join('');
+}
+
+function loadLottery(){
+    if (!window.DB) return;
+    renderLotPool();
+    DB.listMembers().then(function(rows){
+        lotMembers = rows || [];
+        renderLotMemberSelect();
+    }).catch(function(e){
+        setMsg('lotMsg', '成员读取失败：' + (e.message || e), 'err');
+    });
+    DB.listLotteryWins(lotWeekKey()).then(function(rows){
+        lotWins = rows || [];
+        renderLotWins();
+    }).catch(function(e){
+        setMsg('lotMsg', '记录读取失败（请确认已执行 schema.sql v4）：' + (e.message || e), 'err');
+    });
+}
+
+document.getElementById('btnDraw').addEventListener('click', function(){
+    var threshold = Math.max(0, parseInt(document.getElementById('lotThreshold').value, 10) || 0);
+    var sel = document.getElementById('lotMember');
+    var mid = Number(sel.value);
+    var m = lotMembers.find(function(x){ return x.id === mid; });
+    if (!m) { setMsg('lotMsg', '请先选择成员', 'err'); return; }
+    if ((m.active || 0) < threshold) {
+        setMsg('lotMsg', '「' + m.name + '」周活跃 ' + (m.active || 0) + '，未达门槛 ' + threshold, 'err');
+        return;
+    }
+    /* 本周该成员已中的类型 → 从奖池剔除，同类不重复 */
+    var wonTypes = {};
+    lotWins.forEach(function(w){ if (w.member_id === mid) wonTypes[w.prize_type] = true; });
+    var remain = LOT_PRIZES.filter(function(p){ return !wonTypes[p.type]; });
+    if (!remain.length) {
+        setMsg('lotMsg', '该成员本周已抽中过全部奖池类型，下周再来', 'err');
+        document.getElementById('lotResult').textContent = '';
+        return;
+    }
+    var prize = remain[Math.floor(Math.random() * remain.length)];
+    setMsg('lotMsg', '抽取中…');
+    document.getElementById('lotResult').textContent = '';
+    DB.addLotteryWin({
+        member_id: mid,
+        member_name: m.name || ('#' + mid),
+        prize_type: prize.type,
+        prize_name: prize.name,
+        week_key: lotWeekKey(),
+    }).then(function(row){
+        lotWins.unshift(row);
+        renderLotWins();
+        setMsg('lotMsg', '', '');
+        document.getElementById('lotResult').textContent = '恭喜 ' + m.name + ' 抽中【' + prize.name + '】！';
+    }).catch(function(err){
+        setMsg('lotMsg', '记录失败：' + (err.message || '权限不足，请确认已执行 schema.sql v4'), 'err');
+    });
+});
+
+document.getElementById('lotBody').addEventListener('click', function(e){
+    var b = e.target.closest('[data-lot-del]');
+    if (!b) return;
+    var id = Number(b.getAttribute('data-lot-del'));
+    if (!confirm('确认撤销这条中奖记录？撤销后该成员可重新抽取此类型。')) return;
+    DB.deleteLotteryWin(id).then(function(){
+        lotWins = lotWins.filter(function(w){ return w.id !== id; });
+        renderLotWins();
+    }).catch(function(err){
+        alert('撤销失败：' + (err.message || '权限不足'));
+    });
+});
+
+/* 切到抽奖页签时刷新成员与记录 */
+document.addEventListener('tabchange', function(e){
+    if (e.detail && e.detail.group === 'maintab' && e.detail.tab === 'lottery') loadLottery();
 });
 
 /* ---------- 启动 ---------- */

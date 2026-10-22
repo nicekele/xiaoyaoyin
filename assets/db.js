@@ -135,6 +135,21 @@
                 .upsert(rows, { onConflict: 'id' })
                 .then(function (r) { throwIf(r.error, '保存宗门内容'); return true; });
         },
+
+        /* ---------- 抽奖记录（仅管理员，受 RLS 保护） ---------- */
+        listLotteryWins: function (weekKey) {
+            var q = client.from('lottery_wins').select('*').order('id', { ascending: false });
+            if (weekKey) q = q.eq('week_key', weekKey);
+            return q.then(function (r) { throwIf(r.error, '读取抽奖记录'); return r.data || []; });
+        },
+        addLotteryWin: function (row) {
+            return client.from('lottery_wins').insert(row).select().single()
+                .then(function (r) { throwIf(r.error, '记录抽奖结果'); return r.data; });
+        },
+        deleteLotteryWin: function (id) {
+            return client.from('lottery_wins').delete().eq('id', id)
+                .then(function (r) { throwIf(r.error, '撤销抽奖记录'); return true; });
+        },
     };
 
     global.DB = DB;

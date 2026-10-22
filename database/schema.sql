@@ -266,3 +266,30 @@ alter table public.profiles
     add column if not exists title text;
 
 NOTIFY pgrst, 'reload schema';
+
+
+-- ============================================================
+-- v4 扩充：周活跃抽奖记录（可重复执行，仅管理员可读写）
+-- ============================================================
+
+create table if not exists public.lottery_wins (
+  id bigserial primary key,
+  member_id bigint,
+  member_name text not null,
+  prize_type text not null,
+  prize_name text not null,
+  week_key text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.lottery_wins enable row level security;
+
+drop policy if exists "lottery_admin_all" on public.lottery_wins;
+create policy "lottery_admin_all"
+  on public.lottery_wins for all
+  using (public.is_admin())
+  with check (public.is_admin());
+
+create index if not exists idx_lottery_week on public.lottery_wins (week_key);
+
+NOTIFY pgrst, 'reload schema';

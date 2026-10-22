@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="assets/base.css">
     <style>
         .stats-strip {
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 35px;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 35px;
         }
         .stat-card {
             padding: 24px 28px;
@@ -255,11 +255,6 @@
                 <div class="sub">以云端数据库为准</div>
             </div>
             <div class="stat-card reveal">
-                <div class="label">当 前 在 线</div>
-                <div><span class="num" id="onlineCnt">0</span><span class="unit">人</span></div>
-                <div class="sub">🔴 在线率 <strong style="color:var(--gold);" id="onlineRate">0.0%</strong></div>
-            </div>
-            <div class="stat-card reveal">
                 <div class="label">本 周 平 均 活 跃</div>
                 <div><span class="num" id="avgAct">0</span><span class="unit">点</span></div>
                 <div class="sub">数据来自云端 · 实时同步</div>
@@ -450,10 +445,6 @@ function renderTable(){
 
     const n = MEMBERS.length;
     document.getElementById("totalCnt").textContent = n;
-    const onlineN = MEMBERS.filter(m=>m.online==="online").length;
-    document.getElementById("onlineCnt").textContent = onlineN;
-    document.getElementById("onlineRate").textContent =
-        (n ? (onlineN / n * 100).toFixed(1) : "0.0") + "%";
     // 空列表时避免除零
     const avgA = n ? Math.round(MEMBERS.reduce((s,m)=>s+m.active,0)/n) : 0;
     document.getElementById("avgAct").textContent = avgA;
@@ -574,12 +565,17 @@ function viewMem(id){
     alert(`${m.name}\n\n武学门派：${m.school}\n主修心法：${m.xinfa}\n主修武器：${m.weapon}\n等级：Lv.${m.level}\n身份：${m.role}\n周活跃：${m.active}\n本周打本：${m.runs}次${gidLine}`);
 }
 
-/* 管理员点击游戏ID可展开完整号码；访客点击无反应 */
+/* 管理员点击游戏ID：再点一次可收回打码；访客点击无反应 */
 document.getElementById("memBody").addEventListener("click", function(e){
     const g = e.target.closest(".mem-gid");
     if (!g || !isAdminUser) return;
     const m = MEMBERS.find(x => String(x.id) === g.dataset.mid);
-    if (m && m.gameId) {
+    if (!m || !m.gameId) return;
+    if (g.textContent === m.gameId) {
+        /* 当前是全码 → 收回打码 */
+        g.textContent = maskGid(m.gameId);
+        g.style.color = "";
+    } else {
         g.textContent = m.gameId;
         g.style.color = "var(--gold-light)";
     }
