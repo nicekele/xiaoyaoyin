@@ -293,3 +293,13 @@ create policy "lottery_admin_all"
 create index if not exists idx_lottery_week on public.lottery_wins (week_key);
 
 NOTIFY pgrst, 'reload schema';
+
+
+-- ============================================================
+-- v5 扩充：月活跃（月奖励抽奖用，可重复执行）
+-- ============================================================
+
+alter table public.members
+    add column if not exists active_month int not null default 0;
+
+NOTIFY pgrst, 'reload schema';
