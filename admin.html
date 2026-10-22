@@ -717,11 +717,15 @@ document.getElementById('forgotPassLink').addEventListener('click', function(e){
         document.getElementById('liEmail').focus();
         return;
     }
-    setMsg('loginMsg', '正在发送重置邮件…');
-    DB.resetPassword(email).then(function(){
-        setMsg('loginMsg', '重置邮件已发送到 ' + email + '，请到邮箱点链接设置新密码。', 'ok');
+    setMsg('loginMsg', '正在发送重置邮件…（最多等 15 秒）');
+    /* 接口偶发卡住时 15 秒自动结束，不让按钮一直转 */
+    var timeout = new Promise(function(_, reject){
+        setTimeout(function(){ reject(new Error('请求超时')); }, 15000);
+    });
+    Promise.race([DB.resetPassword(email), timeout]).then(function(){
+        setMsg('loginMsg', '重置邮件已发出，通常 1~2 分钟内送达 ' + email + '；没收到请检查垃圾邮件箱，或再点一次。', 'ok');
     }).catch(function(err){
-        setMsg('loginMsg', '发送失败：' + (err.message || '未知错误'), 'err');
+        setMsg('loginMsg', '发送失败：' + (err.message || '未知错误') + '（若邮件箱没有，可稍后再试一次）', 'err');
     });
 });
 
