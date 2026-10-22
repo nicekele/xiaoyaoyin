@@ -248,3 +248,21 @@ alter table public.members
 
 -- 通知接口刷新结构缓存（否则新列在 REST 接口里暂时不可见）
 NOTIFY pgrst, 'reload schema';
+
+
+-- ============================================================
+-- v3 扩充：游戏ID + 账号资料（可重复执行）
+-- ============================================================
+
+-- 成员表：10 位数字游戏ID（名录中对游客打码，仅管理可看全）
+alter table public.members
+    add column if not exists game_id text;
+
+-- 账号档案：邮箱 / 游戏ID / 游戏名 / 职位（社主·副社·管理·社众·学徒）
+alter table public.profiles
+    add column if not exists email text,
+    add column if not exists game_id text,
+    add column if not exists game_name text,
+    add column if not exists title text;
+
+NOTIFY pgrst, 'reload schema';

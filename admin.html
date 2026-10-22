@@ -432,6 +432,7 @@
                     <form id="memberForm">
                         <div class="form-grid">
                             <div class="field"><label>姓名</label><input id="mName" required placeholder="如：李逍遥"></div>
+                            <div class="field"><label>游戏ID（10位数字）</label><input id="mGameId" maxlength="10" inputmode="numeric" pattern="\d{10}" placeholder="如：1234567890"></div>
                             <div class="field"><label>武学门派</label>
                                 <select id="mSchool"></select>
                             </div>
@@ -517,7 +518,13 @@
                     </p>
                     <form id="inviteForm" style="margin-top:18px;">
                         <div class="field"><label>邮箱</label><input type="email" id="ivEmail" required placeholder="you@example.com"></div>
-                        <div class="field"><label>显示名称</label><input id="ivName" required placeholder="如：副社·问天"></div>
+                        <div class="field"><label>游戏ID（10位数字）</label><input type="text" id="ivGameId" required maxlength="10" inputmode="numeric" pattern="\d{10}" placeholder="如：1234567890"></div>
+                        <div class="field"><label>游戏名</label><input id="ivName" required placeholder="如：李逍遥"></div>
+                        <div class="field"><label>职位</label>
+                            <select id="ivTitle">
+                                <option>社众</option><option>学徒</option><option>管理</option><option>副社</option><option>社主</option>
+                            </select>
+                        </div>
                         <div class="field"><label>密码</label><input type="password" id="ivPass" required placeholder="至少 6 位"></div>
                         <div class="field">
                             <label>验证码</label>
@@ -537,7 +544,7 @@
                     <div class="panel-title2">账 号 权 限</div>
                     <div class="table-wrap">
                         <table class="tbl">
-                            <thead><tr><th>账号</th><th>角色</th><th>操作</th></tr></thead>
+                            <thead><tr><th>邮箱</th><th>账号</th><th>角色</th><th>操作</th></tr></thead>
                             <tbody id="acctBody"></tbody>
                         </table>
                     </div>
@@ -936,8 +943,14 @@ document.getElementById('memberForm').addEventListener('submit', function(e){
     var baiye = Math.max(0, parseInt(document.getElementById('mBaiye').value, 10) || 0);
     var war   = Math.max(0, parseInt(document.getElementById('mWar').value, 10) || 0);
     var tower = Math.max(0, parseInt(document.getElementById('mTower').value, 10) || 0);
+    var gameId = document.getElementById('mGameId').value.trim();
+    if (gameId && !/^\d{10}$/.test(gameId)) {
+        setMsg('memberMsg', '游戏ID必须是 10 位数字，或留空', 'err');
+        return;
+    }
     var payload = {
         name: document.getElementById('mName').value.trim(),
+        game_id: gameId || null,
         school: document.getElementById('mSchool').value,
         xinfa: document.getElementById('mXinfa').value.trim(),
         weapon: document.getElementById('mWeapon').value,
@@ -996,6 +1009,7 @@ document.getElementById('memBody').addEventListener('click', function(e){
             document.getElementById('btnSaveMember').textContent = '保 存';
             document.getElementById('btnCancelEdit').hidden = false;
             document.getElementById('mName').value = m.name || '';
+            document.getElementById('mGameId').value = m.game_id || '';
             document.getElementById('mSchool').value = m.school || '';
             fillXinfaSelect(m.school, m.xinfa || '');
             var wSel = document.getElementById('mWeapon');
@@ -1091,7 +1105,7 @@ document.getElementById('postList').addEventListener('click', function(e){
 
 /* ---------- 账号管理（注册 + 授权管理员） ---------- */
 function loadAccounts(){
-    DB.client.from('profiles').select('id,username,role')
+    DB.client.from('profiles').select('id,username,role,email,game_id,game_name,title')
         .order('created_at', { ascending: true })
         .then(function(r){
             if (r.error) throw r.error;
@@ -1102,11 +1116,16 @@ function loadAccounts(){
                 return;
             }
             tb.innerHTML = rows.map(function(a){
-                var isMe = '';
+                var roleCell = (a.game_name || a.title)
+                    ? escapeHtml(a.game_name || '') + (a.title ? ' · ' + escapeHtml(a.title) : '')
+                    : roleTag(a.role === 'admin' ? '管理' : '社众');
+                if (a.role === 'admin') {
+                    roleCell += ' <span style="color:#7a7464;font-size:11px;">admin</span>';
+                }
                 return '<tr>' +
-                    '<td style="color:var(--paper)">' + escapeHtml(a.username || a.id.slice(0,8)) + '</td>' +
-                    '<td>' + roleTag(a.role === 'admin' ? '管理' : '社众') +
-                        (a.role === 'admin' ? ' <span style="color:#7a7464;font-size:11px;">admin</span>' : '') + '</td>' +
+                    '<td style="color:#8f8877">' + escapeHtml(a.email || '—') + '</td>' +
+                    '<td style="color:var(--paper);font-family:Consolas,monospace;">' + escapeHtml(a.game_id || a.username || '—') + '</td>' +
+                    '<td>' + roleCell + '</td>' +
                     '<td>' +
                         (a.role === 'admin'
                             ? '<button class="op" disabled title="至少保留一名管理员">已是管理员</button>'
@@ -1116,7 +1135,7 @@ function loadAccounts(){
             }).join('');
         }).catch(function(e){
             document.getElementById('acctBody').innerHTML =
-                '<tr><td colspan="3" class="empty">' + escapeHtml(e.message) + '</td></tr>';
+                '<tr><td colspan="4" class="empty">' + escapeHtml(e.message) + '</td></tr>';
         });
 }
 
@@ -1128,15 +1147,33 @@ document.getElementById('btnInvite').addEventListener('click', function(){
 document.getElementById('inviteForm').addEventListener('submit', function(e){
     e.preventDefault();
     var email = document.getElementById('ivEmail').value.trim();
+    var gameId = document.getElementById('ivGameId').value.trim();
     var name = document.getElementById('ivName').value.trim();
+    var title = document.getElementById('ivTitle').value;
     var pass = document.getElementById('ivPass').value;
+    if (!/^\d{10}$/.test(gameId)) { setMsg('inviteMsg', '游戏ID必须是 10 位数字', 'err'); return; }
     if (pass.length < 6) { setMsg('inviteMsg', '密码至少 6 位', 'err'); return; }
     if (!checkCaptcha('ivCaptchaImg', 'ivCaptcha')) {
         setMsg('inviteMsg', '验证码不正确，请重试', 'err');
         return;
     }
     setMsg('inviteMsg', '正在创建账号…');
-    DB.signUp(email, pass, name).then(function(){
+    /* username 存游戏ID；游戏名/职位写入 metadata 供建档触发器使用 */
+    DB.signUp(email, pass, gameId, { game_name: name, title: title }).then(function(res){
+        var uid = res && res.user && res.user.id;
+        if (!uid) throw new Error('未返回用户 ID');
+        /* 触发器建档后，管理员补齐资料；社主/副社/管理自动获得后台权限 */
+        var isAdminTitle = (title === '社主' || title === '副社' || title === '管理');
+        return DB.client.from('profiles').update({
+            email: email,
+            game_id: gameId,
+            game_name: name,
+            title: title,
+            username: gameId,
+            role: isAdminTitle ? 'admin' : 'member',
+        }).eq('id', uid);
+    }).then(function(r){
+        if (r && r.error) throw r.error;
         setMsg('inviteMsg', '账号已创建。若开启了邮箱验证，需对方先点击邮箱确认链接才能登录。', 'ok');
         document.getElementById('inviteForm').reset();
         setTimeout(loadAccounts, 1200);

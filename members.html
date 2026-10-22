@@ -131,6 +131,18 @@
             margin-left: 8px;
             vertical-align: middle;
         }
+        .mem-gid {
+            display: inline-block;
+            margin-left: 8px; padding: 1px 7px;
+            font-size: 11px; font-family: Consolas, monospace;
+            letter-spacing: 1px; color: #8a8473;
+            border: 1px dashed rgba(201, 169, 97, 0.28);
+            border-radius: 4px; vertical-align: middle;
+        }
+        body.is-admin .mem-gid { cursor: pointer; }
+        body.is-admin .mem-gid:hover {
+            color: var(--gold); border-color: rgba(201, 169, 97, 0.55);
+        }
         .online-dot {
             display: inline-block; width: 8px; height: 8px; border-radius: 50%;
             margin-right: 7px; vertical-align: middle;
@@ -275,12 +287,6 @@
                     <option>社长</option><option>副社</option><option>管理</option>
                     <option>社众</option><option>学徒</option>
                 </select>
-                <label>状态:</label>
-                <select id="fStatus" onchange="renderTable()">
-                    <option value="">全部</option>
-                    <option value="online">在线</option>
-                    <option value="offline">离线</option>
-                </select>
             </div>
             <button class="btn" onclick="resetFilter()">🔄 重置筛选</button>
             <button class="btn btn-primary" data-admin-only onclick="addMemberBtn()">➕ 新增成员</button>
@@ -298,8 +304,6 @@
                         <th data-sort="role">身 份</th>
                         <th data-sort="active">周 活 跃 度<span class="sort-ic">⇅</span></th>
                         <th data-sort="runs">打 本 数<span class="sort-ic">⇅</span></th>
-                        <th data-sort="last">最 近 登 录<span class="sort-ic">⇅</span></th>
-                        <th>状 态</th>
                         <th>操 作</th>
                     </tr>
                 </thead>
@@ -355,11 +359,19 @@ function mapRow(r){
         role: r.role || "社众",
         active: r.active || 0,
         runs: r.runs || 0,
+        gameId: r.game_id ? String(r.game_id) : "",
         online: (r.online === true || r.online === "online") ? "online" : "offline",
         lastLogin: txt || "—",
         lastLoginDays: (txt === "刚刚" || txt === "") ? 0 : (mDays ? parseInt(mDays[1], 10) : 30),
         onlineHours: 0,
     };
+}
+/* 游戏ID脱敏：露出前3位和后2位，中间打码，防止路人乱加好友 */
+function maskGid(g){
+    g = String(g || "");
+    if (!g) return "";
+    if (g.length <= 5) return g[0] + "*".repeat(Math.max(1, g.length - 1));
+    return g.slice(0, 3) + "*".repeat(g.length - 5) + g.slice(-2);
 }
 function dbErrorText(e){
     return (e && e.message) ? e.message : String(e);
@@ -398,13 +410,11 @@ function applyFilters(list){
     const kw = document.getElementById("searchInput").value.trim().toLowerCase();
     const fSch = document.getElementById("fSchool").value;
     const fR = document.getElementById("fRole").value;
-    const fS = document.getElementById("fStatus").value;
     return list.filter(m => {
         if (fSch && m.school !== fSch) return false;
         if (fR && m.role !== fR) return false;
-        if (fS && m.online !== fS) return false;
         if (kw) {
-            const s = (m.name + m.weapon + m.xinfa + m.school).toLowerCase();
+            const s = (m.name + m.weapon + m.xinfa + m.school + m.gameId).toLowerCase();
             if (!s.includes(kw)) return false;
         }
         return true;
@@ -455,17 +465,21 @@ function renderTable(){
             : (n === 0
                 ? (isAdminUser ? "暂无成员。点右上角「新增成员」开始录入。" : "暂无成员数据")
                 : "没有匹配的结果");
-        tb.innerHTML = `<tr><td colspan="10" class="empty-cell">${tip}</td></tr>`;
+        tb.innerHTML = `<tr><td colspan="8" class="empty-cell">${tip}</td></tr>`;
     } else {
     tb.innerHTML = slice.map(m => {
         const pct = Math.min(100, Math.round(m.active/100));
         const initial = m.name.slice(0, 2);
+        const gidHtml = m.gameId
+            ? `<span class="mem-gid" data-mid="${m.id}" title="${isAdminUser ? '点击查看完整游戏ID' : '完整游戏ID仅管理可见'}">${maskGid(m.gameId)}</span>`
+            : '';
         return `<tr>
             <td style="color:#8a8473;">${String(m.id).padStart(3,"0")}</td>
             <td>
                 <span class="mem-avatar">${initial}</span>
                 <span class="mem-name">${m.name}·${m.xinfa}</span>
                 <span class="mem-weapon w-${m.weapon}">${m.weapon}</span>
+                ${gidHtml}
             </td>
             <td><span class="mem-school sc-${m.schoolId}">${m.school}</span></td>
             <td><span class="lv-badge">Lv.${m.level}</span></td>
@@ -475,8 +489,6 @@ function renderTable(){
                 <span class="bar-val">${m.active}</span>
             </td>
             <td style="font-weight:bold;color:var(--gold-light);">${m.runs} <span style="color:#666;font-weight:normal;font-size:12px;">次</span></td>
-            <td style="color:${m.lastLoginDays<=3?'#9cd3b0':m.lastLoginDays<=7?'#e8d5a3':'#888'};">${m.lastLogin}</td>
-            <td><span class="online-dot ${m.online}"></span>${m.online==="online"?"<span style='color:#9cd3b0'>在线</span>":"<span style='color:#888'>离线</span>"}</td>
             <td>
                 <button class="op-btn" onclick="viewMem(${m.id})">查看</button>
                 <button class="op-btn danger" data-admin-only onclick="delMem(${m.id})">移除</button>
@@ -541,7 +553,6 @@ function resetFilter(){
     document.getElementById("searchInput").value="";
     document.getElementById("fSchool").value="";
     document.getElementById("fRole").value="";
-    document.getElementById("fStatus").value="";
     curPage = 1; renderTable();
 }
 
@@ -556,8 +567,23 @@ function resetFilter(){
 function viewMem(id){
     const m = MEMBERS.find(x=>x.id===id);
     if (!m) return;
-    alert(`${m.name}\n\n武学门派：${m.school}\n主修心法：${m.xinfa}\n主修武器：${m.weapon}\n等级：Lv.${m.level}\n身份：${m.role}\n周活跃：${m.active}\n本周打本：${m.runs}次\n累计在线：${m.onlineHours}小时\n状态：${m.online==='online'?'在线':'离线（'+m.lastLogin+'）'}`);
+    /* 游戏ID：管理看全码，其他人只看脱敏 */
+    const gidLine = m.gameId
+        ? `\n游戏ID：${isAdminUser ? m.gameId : maskGid(m.gameId)}${isAdminUser ? '' : '（完整ID仅管理可见）'}`
+        : '';
+    alert(`${m.name}\n\n武学门派：${m.school}\n主修心法：${m.xinfa}\n主修武器：${m.weapon}\n等级：Lv.${m.level}\n身份：${m.role}\n周活跃：${m.active}\n本周打本：${m.runs}次${gidLine}`);
 }
+
+/* 管理员点击游戏ID可展开完整号码；访客点击无反应 */
+document.getElementById("memBody").addEventListener("click", function(e){
+    const g = e.target.closest(".mem-gid");
+    if (!g || !isAdminUser) return;
+    const m = MEMBERS.find(x => String(x.id) === g.dataset.mid);
+    if (m && m.gameId) {
+        g.textContent = m.gameId;
+        g.style.color = "var(--gold-light)";
+    }
+});
 function delMem(id){
     const m = MEMBERS.find(x=>x.id===id);
     if (!m) return;
