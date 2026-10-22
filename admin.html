@@ -392,8 +392,8 @@
                             </div>
                             <div class="field"><label>主修武器</label>
                                 <select id="mWeapon">
-                                    <option>剑</option><option>刀</option><option>伞</option><option>枪</option>
-                                    <option>扇</option><option>拳</option><option>双刀</option><option>陌刀</option><option>绳镖</option>
+                                    <option>剑</option><option>枪</option><option>扇</option><option>陌刀</option><option>双刀</option>
+                                    <option>伞</option><option>绳镖</option><option>横刀</option><option>手甲</option><option>舞绫鼓</option>
                                 </select>
                             </div>
                             <div class="field"><label>身份</label>
@@ -850,7 +850,15 @@ document.getElementById('memBody').addEventListener('click', function(e){
             document.getElementById('mName').value = m.name || '';
             document.getElementById('mSchool').value = m.school || '';
             fillXinfaSelect(m.school, m.xinfa || '');
-            document.getElementById('mWeapon').value = m.weapon || '剑';
+            var wSel = document.getElementById('mWeapon');
+            wSel.value = m.weapon || '剑';
+            if (m.weapon && wSel.value !== m.weapon) {
+                /* 旧列表遗留的武器值：保留在下拉里，编辑时不被静默改成「剑」 */
+                var wo = document.createElement('option');
+                wo.textContent = m.weapon;
+                wSel.insertBefore(wo, wSel.firstChild);
+                wSel.value = m.weapon;
+            }
             document.getElementById('mRole').value = m.role || '社众';
             document.getElementById('mLevel').value = m.level || 100;
             document.getElementById('mActive').value = m.active || 0;

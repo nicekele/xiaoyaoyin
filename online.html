@@ -595,7 +595,7 @@ document.getElementById("hoursList").innerHTML = topHours.map((r,i)=>{
 }).join("");
 
 /* ========== 最近登录列表 ========== */
-const weapons = ["剑","刀","伞","枪","扇","拳","双刀","陌刀","绳镖"];
+const weapons = ["剑","枪","扇","陌刀","双刀","伞","绳镖","横刀","手甲","舞绫鼓"];
 const locs = ["清河·樊楼","开封·太学","河西·凉州","不见山·峰顶","江南·水乡","百叶驻地","开封·擂台","藏锋谷"];
 
 function buildLoginRows(count){
@@ -622,7 +622,7 @@ function buildLoginRows(count){
         }
         rows.push({
             name: n,
-            weapon: weapons[s % 9],
+            weapon: weapons[s % weapons.length],
             loc: locs[s % locs.length],
             online, timeText, fresh,
             ip: `${220 + (s % 30)}.${s % 255}.${s % 128}.${100 + s % 150}`,
