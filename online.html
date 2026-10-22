@@ -325,39 +325,36 @@
             <h1 class="page-cn">在 线 时 长 统 计</h1>
         </div>
 
-        <div class="time-tabs" data-tab-group="range">
-            <button class="time-tab" data-tab="yesterday">昨天</button>
-            <button class="time-tab active" data-tab="d7">近 7 天</button>
-            <button class="time-tab" data-tab="d30">近 30 天</button>
-            <button class="time-tab" data-tab="month">本月</button>
-            <button class="time-tab" data-tab="season">本赛季</button>
+        <!-- 数据说明：数据库只有本周快照，已移除会显示假数据的时间范围切换 -->
+        <div style="color:#777;font-size:12.5px;letter-spacing:1px;margin-bottom:18px;">
+            ◆ 本页数据全部来自成员表（本周在线时长 / 在线状态 / 近7日活跃），无历史区间可供切换
         </div>
 
         <!-- 概览卡 -->
         <div class="overview-grid">
             <div class="overview-card reveal">
                 <div class="oc-ring"></div>
-                <div class="oc-label">宗 门 累 计 在 线</div>
-                <div class="oc-num"><span id="ovTotal" data-count="3486">3,486</span><span class="oc-unit">小时</span></div>
-                <div class="oc-sub" id="ovTotalSub">7日总计 · 环比 <span class="up">↑ 8.2%</span></div>
+                <div class="oc-label">宗 门 本 周 累 计 在 线</div>
+                <div class="oc-num"><span id="ovTotal" data-count="0">0</span><span class="oc-unit">小时</span></div>
+                <div class="oc-sub" id="ovTotalSub">加载中…</div>
             </div>
             <div class="overview-card gold reveal">
                 <div class="oc-ring"></div>
                 <div class="oc-label">人 均 日 均 在 线</div>
-                <div class="oc-num"><span id="ovAvg" data-count="3.89">3.89</span><span class="oc-unit">小时</span></div>
-                <div class="oc-sub" id="ovAvgSub">日均活跃时长 · 环比 <span class="up">↑ 0.43h</span></div>
-            </div>
-            <div class="overview-card red reveal">
-                <div class="oc-ring"></div>
-                <div class="oc-label" id="ovStaleLabel">近 3 日 未 登 录</div>
-                <div class="oc-num"><span id="ovStale" data-count="7">7</span><span class="oc-unit">人</span></div>
-                <div class="oc-sub" id="ovStaleSub">需私发提醒 · 较昨日 <span class="down">↓ 1 人</span></div>
+                <div class="oc-num"><span id="ovAvg" data-count="0">0</span><span class="oc-unit">小时</span></div>
+                <div class="oc-sub" id="ovAvgSub">加载中…</div>
             </div>
             <div class="overview-card blue reveal">
                 <div class="oc-ring"></div>
-                <div class="oc-label" id="ovPeakLabel">当 前 同 时 在 线</div>
-                <div class="oc-num"><span id="ovPeak" data-count="37">37</span><span class="oc-unit">人</span></div>
-                <div class="oc-sub" id="ovPeakSub">今日峰值 <span style="color:var(--gold);">62 人</span>（19:45）</div>
+                <div class="oc-label" id="ovOnlineLabel">当 前 在 线</div>
+                <div class="oc-num"><span id="ovOnline" data-count="0">0</span><span class="oc-unit">人</span></div>
+                <div class="oc-sub" id="ovOnlineSub">加载中…</div>
+            </div>
+            <div class="overview-card red reveal">
+                <div class="oc-ring"></div>
+                <div class="oc-label" id="ovOfflineLabel">当 前 离 线</div>
+                <div class="oc-num"><span id="ovOffline" data-count="0">0</span><span class="oc-unit">人</span></div>
+                <div class="oc-sub" id="ovOfflineSub">加载中…</div>
             </div>
         </div>
 
@@ -366,41 +363,18 @@
             <div class="panel">
                 <div class="panel-head">
                     <div>
-                        <div class="panel-title" id="hmTitle">近 7 天 × 24 时 段 登 录 热 力 图</div>
-                        <div style="color:#777;font-size:12px;margin-top:6px;padding-left:16px;">颜色越深表示此时段登录人数越多</div>
+                        <div class="panel-title" id="hmTitle">近 7 日 活 跃 趋 势</div>
+                        <div style="color:#777;font-size:12px;margin-top:6px;padding-left:16px;">由各成员「近7日活跃」汇总，数值为活跃度点数</div>
                     </div>
                     <span class="panel-tag" id="hmTag">本周</span>
                 </div>
-                <div class="heatmap-wrap">
-                    <div class="heatmap" id="heatmap"></div>
-                </div>
-                <div class="hm-legend">
-                    <span>少</span>
-                    <span class="sq h0"></span>
-                    <span class="sq h1"></span>
-                    <span class="sq h2"></span>
-                    <span class="sq h3"></span>
-                    <span class="sq h4"></span>
-                    <span class="sq h5"></span>
-                    <span>多</span>
-                </div>
-
-                <div style="margin-top: 30px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom: 16px;">
-                        <div style="font-size:16px;color:var(--paper);letter-spacing:3px;font-weight:bold;">
-                            <span style="display:inline-block;width:4px;height:16px;background:var(--gold);margin-right:10px;"></span>
-                            高 峰 时 段 分 布
-                        </div>
-                        <span style="color:#777;font-size:12px;" id="hbSum">7 日合计 · 单位：人次</span>
-                    </div>
-                    <div class="hour-bars" id="hourBars"></div>
-                </div>
+                <div class="hour-bars" id="weekTrend"></div>
             </div>
 
             <div class="panel">
                 <div class="panel-head">
-                    <div class="panel-title">个 人 总 时 长 Top 10</div>
-                    <div class="panel-sub" id="topSub">近 7 天 · 单人均值 27.2h</div>
+                    <div class="panel-title">本 周 时 长 Top 10</div>
+                    <div class="panel-sub" id="topSub">按成员表「本周在线时长」排序</div>
                 </div>
                 <div class="hours-list" id="hoursList"></div>
             </div>
@@ -410,87 +384,17 @@
         <div class="grid-2b">
             <div class="panel">
                 <div class="panel-head">
-                    <div class="panel-title">最 近 登 录 成 员 列 表</div>
-                    <div class="panel-sub">实时更新 · 共 100 人</div>
+                    <div class="panel-title">成 员 登 录 状 态 列 表</div>
+                    <div class="panel-sub" id="loginSub">加载中…</div>
                 </div>
                 <div class="login-list" id="loginList"></div>
             </div>
             <div class="panel">
                 <div class="panel-head">
-                    <div class="panel-title">登 录 设 备 分 布</div>
-                    <div class="panel-sub">近 30 天</div>
+                    <div class="panel-title">离 线 成 员 提 醒</div>
+                    <div class="panel-sub">当前离线成员一览</div>
                 </div>
-                <div class="device-list">
-                    <div class="device-row">
-                        <div class="device-ic">🖥</div>
-                        <div class="device-info">
-                            <div class="n">Windows PC 客户端</div>
-                            <div class="bar"><span style="width:62%;"></span></div>
-                        </div>
-                        <div class="device-val">
-                            <div class="n">78</div>
-                            <div class="p">60.9%</div>
-                        </div>
-                    </div>
-                    <div class="device-row device-blue">
-                        <div class="device-ic">🍎</div>
-                        <div class="device-info">
-                            <div class="n">Mac 客户端</div>
-                            <div class="bar"><span style="width:14%;"></span></div>
-                        </div>
-                        <div class="device-val">
-                            <div class="n" style="color:#6aa0e0;">18</div>
-                            <div class="p">14.1%</div>
-                        </div>
-                    </div>
-                    <div class="device-row device-red">
-                        <div class="device-ic">📱</div>
-                        <div class="device-info">
-                            <div class="n">iOS 移动端</div>
-                            <div class="bar"><span style="width:12%;"></span></div>
-                        </div>
-                        <div class="device-val">
-                            <div class="n" style="color:var(--red-light);">16</div>
-                            <div class="p">12.5%</div>
-                        </div>
-                    </div>
-                    <div class="device-row">
-                        <div class="device-ic">🤖</div>
-                        <div class="device-info">
-                            <div class="n">Android 移动端</div>
-                            <div class="bar"><span style="width:11%;"></span></div>
-                        </div>
-                        <div class="device-val">
-                            <div class="n" style="color:var(--jade-light);">14</div>
-                            <div class="p">10.9%</div>
-                        </div>
-                    </div>
-                    <div class="device-row device-red">
-                        <div class="device-ic">☁</div>
-                        <div class="device-info">
-                            <div class="n">云游戏 / 其他设备</div>
-                            <div class="bar"><span style="width:2%;"></span></div>
-                        </div>
-                        <div class="device-val">
-                            <div class="n" style="color:var(--gold-deep);">2</div>
-                            <div class="p">1.6%</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="margin-top:28px;padding-top:22px;border-top:1px dashed rgba(201,169,97,.12);">
-                    <div style="font-size:15px;color:var(--paper);letter-spacing:3px;font-weight:bold;margin-bottom:14px;">
-                        <span style="display:inline-block;width:4px;height:16px;background:var(--red);margin-right:10px;"></span>
-                        需 唤 醒 成 员
-                    </div>
-                    <div style="display:flex;flex-wrap:wrap;gap:10px;">
-                        <span style="padding:6px 12px;border:1px dashed var(--red-light);color:#e0a0a0;font-size:13px;">独孤·云轩 · 7天未登</span>
-                        <span style="padding:6px 12px;border:1px dashed var(--red-light);color:#e0a0a0;font-size:13px;">慕容·若曦 · 5天未登</span>
-                        <span style="padding:6px 12px;border:1px dashed var(--red-light);color:#e0a0a0;font-size:13px;">叶·听雨 · 4天未登</span>
-                        <span style="padding:6px 12px;border:1px dashed var(--red-light);color:#e0a0a0;font-size:13px;">楚·忘机 · 4天未登</span>
-                        <span style="padding:6px 12px;border:1px dashed var(--gold-deep);color:#e0c896;font-size:13px;">...+ 3 人</span>
-                    </div>
-                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:10px;" id="staleList"></div>
             </div>
         </div>
     </div>
@@ -498,360 +402,171 @@
     <div class="footer-bottom">
         <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;">
             <span>© 2026 逍遥引 · 燕云十六声 宗门成员管理系统 · 在线分析模块</span>
-            <span>刷新：2026-09-19 14:32 · <a href="#">设置</a></span>
+            <span>数据来自 Supabase 成员表 · <a href="admin.html">管理后台</a></span>
         </div>
     </div>
 
+<script src="assets/vendor/supabase.min.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/db.js"></script>
 <script>
-/* 生成热力图数据 (7天 x 24时段) */
-const days = ["周一","周二","周三","周四","周五","周六","周日"];
-const hours = [];
-for (let h=0; h<24; h++) hours.push(h);
-// 生成模拟数据（0~5级），符合实际规律：12点/19-22点高峰，3-7点低谷
-function pickLevel(dayIdx, h){
-    // 周末略高
-    const weekendBoost = (dayIdx>=5) ? 0.8 : 0;
-    let base = 0;
-    if (h>=0 && h<3) base = 0.8 + weekendBoost*0.4;
-    else if (h>=3 && h<7) base = 0.1;
-    else if (h>=7 && h<11) base = 1 + weekendBoost*0.8;
-    else if (h>=11 && h<14) base = 2.6 + weekendBoost*0.6;
-    else if (h>=14 && h<18) base = 1.8 + weekendBoost*1;
-    else if (h>=18 && h<23) base = 3.6 + weekendBoost*1.2;
-    else base = 1.8 + weekendBoost*0.3;
-    // 随机扰动
-    base += (Math.sin((dayIdx*97+h*13))*0.7);
-    base = Math.max(0, Math.min(5, Math.round(base)));
-    return base;
-}
-
-const hm = document.getElementById("heatmap");
-let html = `<div class="hm-head"></div>`;
-hours.forEach(h => {
-    const lbl = h%3===0 ? String(h).padStart(2,"0") : "";
-    html += `<div class="hm-head">${lbl}</div>`;
-});
-for (let d=0; d<7; d++){
-    html += `<div class="hm-day">${days[d]}</div>`;
-    for (let h=0; h<24; h++){
-        const lvl = pickLevel(d,h);
-        const people = [0, 3, 11, 22, 34, 52][lvl] + Math.floor(Math.random()*5);
-        html += `<div class="hm-cell h${lvl}" data-tip="${days[d]} ${String(h).padStart(2,'0')}:00 · ${people}人在线"></div>`;
-    }
-}
-hm.innerHTML = html;
-
-/* 高峰时段条形图（4个时段）*/
-const slots = [
-    ["中午 11-14", 138, 62],
-    ["下午 14-18", 217, 85],
-    ["黄金 18-23", 426, 75],
-    ["深夜 23-02", 162, 44],
-    ["凌晨 02-07", 38, 98],
-    ["早间 07-11", 92, 88],
-];
-const slotMax = Math.max(...slots.map(s=>s[1]));
-document.getElementById("hourBars").innerHTML = slots.map(s=>{
-    const pct = Math.round(s[1]/slotMax*100);
-    return `<div class="hb-label">${s[0]}</div>
-            <div class="hb-track"><span style="width:${pct}%;"></span></div>
-            <div class="hb-val">${s[1]} 人次</div>`;
-}).join("");
-
-/* Top 10 时长榜 */
-const firstNames = ["李","上官","慕容","独孤","林","叶","顾","沈","萧","云","楚","风","陆","方","苏","南宫","赵","钱","吴","郑","王"];
-const givenNames = ["逍遥","问天","无忌","云轩","清风","惊鸿","逸尘","长夜","长歌","慕白","飞鸿","雪琪","灵儿","若曦","听雨","忘机","无言","天行","九歌","潇湘"];
-function hashStr(s){ let h=0; for(const c of s) h=(h*31+c.charCodeAt(0))&0x7fffffff; return h; }
-const topHours = [];
-for(let i=0;i<10;i++){
-    let n;
-    do { n = firstNames[Math.floor(Math.random()*firstNames.length)] + givenNames[Math.floor(Math.random()*givenNames.length)]; }
-    while (topHours.find(x=>x.name===n));
-    const s = hashStr(n);
-    topHours.push({
-        name: n,
-        totalH: Math.round((88 - i*5 - s%6) * 10) / 10,
-        streak: 7 - Math.floor(i/4),
-        session: 18 - i + (s%3),
-        lastMin: s%60,
-    });
-}
-const hMax = topHours[0].totalH;
-document.getElementById("hoursList").innerHTML = topHours.map((r,i)=>{
-    const initial = r.name.slice(0, 2);
-    const h = Math.floor(r.totalH);
-    const m = Math.round((r.totalH - h) * 60);
-    const pct = Math.round(r.totalH / hMax * 100);
-    return `<div class="hours-row">
-        <div class="hours-rank ${i<3?'rank-'+(i+1):''}" style="color:${i>=3?'#888':'inherit'};">${i+1}</div>
-        <div>
-            <span class="hours-avatar">${initial}</span>
-            <span class="hours-name">${r.name}</span>
-            <div class="hours-meta">连续在线 ${r.streak} 天 · 本周启动 ${r.session} 次 · 本次登录 ${r.lastMin} 分钟前</div>
-            <div class="hours-bar"><span style="width:${pct}%"></span></div>
-        </div>
-        <div class="hours-val">${h}<small>h</small> ${String(m).padStart(2,'0')}<small>m</small></div>
-    </div>`;
-}).join("");
-
-/* ========== 最近登录列表 ========== */
-const weapons = ["剑","枪","扇","陌刀","双刀","伞","绳镖","横刀","手甲","舞绫鼓"];
-const locs = ["清河·樊楼","开封·太学","河西·凉州","不见山·峰顶","江南·水乡","百叶驻地","开封·擂台","藏锋谷"];
-
-function buildLoginRows(count){
-    const rows = [];
-    for (let i = 0; i < count; i++){
-        let n;
-        do { n = firstNames[Math.floor(Math.random()*firstNames.length)] + givenNames[Math.floor(Math.random()*givenNames.length)]; }
-        while (rows.find(x => x.name === n));
-        const s = hashStr(n);
-        const online = i < 4;
-        let timeText, fresh;
-        if (online) {
-            timeText = `在线 · ${1 + s % 5}小时前活跃`;
-            fresh = true;
-        } else if (i < count * 0.55) {
-            timeText = `${s % 59 + 1} 分钟前`;
-            fresh = true;
-        } else if (i < count * 0.8) {
-            timeText = `${1 + s % 5} 小时前`;
-            fresh = true;
-        } else {
-            timeText = `${1 + s % 2} 天前`;
-            fresh = false;
-        }
-        rows.push({
-            name: n,
-            weapon: weapons[s % weapons.length],
-            loc: locs[s % locs.length],
-            online, timeText, fresh,
-            ip: `${220 + (s % 30)}.${s % 255}.${s % 128}.${100 + s % 150}`,
-        });
-    }
-    return rows;
-}
-
-function renderLoginList(count){
-    const ll = document.getElementById("loginList");
-    if (!ll) return;
-    let h = `<div class="login-head">
-        <div>状 态</div><div>成 员 / 武 器</div><div>最 近 位 置</div><div>登 录 IP</div><div>最 近 活 跃</div>
-    </div>`;
-    buildLoginRows(count).forEach(r => {
-        const color = r.online
-            ? 'var(--jade-light)'
-            : (r.fresh ? 'var(--gold)' : '#888');
-        h += `<div class="login-row">
-            <div><span class="login-dot ${r.online ? 'dot-on' : 'dot-off'}"></span>${r.online ? '<span style="color:#9cd3b0;">在线</span>' : '<span style="color:#888;">离线</span>'}</div>
-            <div><span style="color:var(--paper);font-size:14px;letter-spacing:1px;">${r.name}</span> &nbsp; <span class="w-tag w-${r.weapon}">${r.weapon}</span></div>
-            <div><span class="loc-tag">📍 ${r.loc}</span></div>
-            <div style="color:#777;font-size:12px;font-family:Consolas,monospace;">${r.ip}</div>
-            <div style="color:${color};font-size:13px;">${r.timeText}</div>
-        </div>`;
-    });
-    ll.innerHTML = h;
-}
-
-/* ========== 热力图 / 高峰时段 / Top10 渲染 ========== */
-function pickLevel(dayIdx, h, boost){
-    const weekendBoost = (dayIdx >= 5) ? 0.8 : 0;
-    let base;
-    if (h < 3)        base = 0.8 + weekendBoost * 0.4;
-    else if (h < 7)   base = 0.1;
-    else if (h < 11)  base = 1 + weekendBoost * 0.8;
-    else if (h < 14)  base = 2.6 + weekendBoost * 0.6;
-    else if (h < 18)  base = 1.8 + weekendBoost * 1;
-    else if (h < 23)  base = 3.6 + weekendBoost * 1.2;
-    else              base = 1.8 + weekendBoost * 0.3;
-    base += Math.sin(dayIdx * 97 + h * 13) * 0.7;
-    base += (boost || 0);
-    return Math.max(0, Math.min(5, Math.round(base)));
-}
-
-function renderHeatmap(boost){
-    const hm = document.getElementById("heatmap");
-    if (!hm) return;
-    let html = `<div class="hm-head"></div>`;
-    for (let h = 0; h < 24; h++) {
-        const lbl = h % 3 === 0 ? String(h).padStart(2, "0") : "";
-        html += `<div class="hm-head">${lbl}</div>`;
-    }
-    for (let d = 0; d < 7; d++) {
-        html += `<div class="hm-day">${days[d]}</div>`;
-        for (let h = 0; h < 24; h++) {
-            const lvl = pickLevel(d, h, boost);
-            const people = [0, 3, 11, 22, 34, 52][lvl] + Math.floor(Math.random() * 5);
-            html += `<div class="hm-cell h${lvl}" data-tip="${days[d]} ${String(h).padStart(2, '0')}:00 · ${people}人在线"></div>`;
-        }
-    }
-    hm.innerHTML = html;
-}
-
-const BASE_SLOTS = [
-    ["中午 11-14", 138],
-    ["下午 14-18", 217],
-    ["黄金 18-23", 426],
-    ["深夜 23-02", 162],
-    ["凌晨 02-07", 38],
-    ["早间 07-11", 92],
-];
-function renderHourBars(scale){
-    const el = document.getElementById("hourBars");
-    if (!el) return;
-    const scaled = BASE_SLOTS.map(s => [s[0], Math.round(s[1] * scale)]);
-    const slotMax = Math.max(...scaled.map(s => s[1]));
-    el.innerHTML = scaled.map(s => {
-        const pct = Math.round(s[1] / slotMax * 100);
-        return `<div class="hb-label">${s[0]}</div>
-                <div class="hb-track"><span style="width:${pct}%;"></span></div>
-                <div class="hb-val">${s[1]} 人次</div>`;
-    }).join("");
-}
-
-function renderTopHours(topH){
-    const el = document.getElementById("hoursList");
-    if (!el) return;
-    const topHours = [];
-    for (let i = 0; i < 10; i++){
-        let n;
-        do { n = firstNames[Math.floor(Math.random()*firstNames.length)] + givenNames[Math.floor(Math.random()*givenNames.length)]; }
-        while (topHours.find(x => x.name === n));
-        const s = hashStr(n);
-        topHours.push({
-            name: n,
-            // 加一个小数尾数，否则结果恒为整数，分钟位会永远显示 00
-            totalH: Math.round((topH - i * 5 - (s % 6)) * 10 + (s % 59)) / 10,
-            streak: 7 - Math.floor(i / 4),
-            session: Math.max(1, 18 - i + (s % 3)),
-            lastMin: s % 60,
-        });
-    }
-    const hMax = topHours[0].totalH;
-    el.innerHTML = topHours.map((r, i) => {
-        const initial = r.name.slice(0, 2);
-        const h = Math.floor(r.totalH);
-        const m = Math.round((r.totalH - h) * 60);
-        const pct = Math.round(r.totalH / hMax * 100);
-        return `<div class="hours-row">
-            <div class="hours-rank ${i < 3 ? 'rank-' + (i+1) : ''}" style="color:${i >= 3 ? '#888' : 'inherit'};">${i+1}</div>
-            <div>
-                <span class="hours-avatar">${initial}</span>
-                <span class="hours-name">${r.name}</span>
-                <div class="hours-meta">连续在线 ${r.streak} 天 · 本周启动 ${r.session} 次 · 本次登录 ${r.lastMin} 分钟前</div>
-                <div class="hours-bar"><span style="width:${pct}%"></span></div>
-            </div>
-            <div class="hours-val">${h}<small>h</small> ${String(m).padStart(2,'0')}<small>m</small></div>
-        </div>`;
-    }).join("");
-}
-
-/* ========== 时间范围 → 真实数据切换 ========== */
-const RANGE_DATA = {
-    yesterday: {
-        label: '昨天', title: '近 7 天 × 24 时 段 登 录 热 力 图', tag: '昨日',
-        total: 512, avg: 3.62, stale: 7, peak: 37,
-        staleLabel: '近 3 日 未 登 录', peakLabel: '当 前 同 时 在 线',
-        totalSub: '昨日总计 · 环比 <span class="up">↑ 3.1%</span>',
-        avgSub: '日均活跃时长 · 环比 <span class="down">↓ 0.11h</span>',
-        staleSub: '需私发提醒 · 较前日 <span class="down">↓ 1 人</span>',
-        peakSub: '昨日峰值 <span style="color:var(--gold);">58 人</span>（20:10）',
-        topSub: '昨日 · 单人均值 3.6h', topH: 14, hbSum: '昨日合计 · 单位：人次',
-        hbScale: 0.14, boost: -0.4, rows: 16,
-    },
-    d7: {
-        label: '近 7 天', title: '近 7 天 × 24 时 段 登 录 热 力 图', tag: '本周',
-        total: 3486, avg: 3.89, stale: 7, peak: 37,
-        staleLabel: '近 3 日 未 登 录', peakLabel: '当 前 同 时 在 线',
-        totalSub: '7日总计 · 环比 <span class="up">↑ 8.2%</span>',
-        avgSub: '日均活跃时长 · 环比 <span class="up">↑ 0.43h</span>',
-        staleSub: '需私发提醒 · 较昨日 <span class="down">↓ 1 人</span>',
-        peakSub: '今日峰值 <span style="color:var(--gold);">62 人</span>（19:45）',
-        topSub: '近 7 天 · 单人均值 27.2h', topH: 88, hbSum: '7 日合计 · 单位：人次',
-        hbScale: 1, boost: 0, rows: 16,
-    },
-    d30: {
-        label: '近 30 天', title: '近 7 天 × 24 时 段 登 录 热 力 图', tag: '近 30 天抽样',
-        total: 14720, avg: 3.71, stale: 12, peak: 41,
-        staleLabel: '近 7 日 未 登 录', peakLabel: '区间同 时 在 线 峰 值',
-        totalSub: '30日总计 · 环比 <span class="up">↑ 5.4%</span>',
-        avgSub: '日均活跃时长 · 环比 <span class="down">↓ 0.18h</span>',
-        staleSub: '需私发提醒 · 较上月 <span class="up">↓ 3 人</span>',
-        peakSub: '30日峰值 <span style="color:var(--gold);">71 人</span>（周六 20:35）',
-        topSub: '近 30 天 · 单人均值 111.3h', topH: 168, hbSum: '30 日合计 · 单位：人次',
-        hbScale: 4.2, boost: 0.5, rows: 16,
-    },
-    month: {
-        label: '本月', title: '近 7 天 × 24 时 段 登 录 热 力 图', tag: '本月抽样',
-        total: 14720, avg: 3.71, stale: 12, peak: 41,
-        staleLabel: '近 7 日 未 登 录', peakLabel: '区间同 时 在 线 峰 值',
-        totalSub: '本月总计 · 环比 <span class="up">↑ 5.4%</span>',
-        avgSub: '日均活跃时长 · 环比 <span class="down">↓ 0.18h</span>',
-        staleSub: '需私发提醒 · 较上月 <span class="up">↓ 3 人</span>',
-        peakSub: '本月峰值 <span style="color:var(--gold);">71 人</span>（周六 20:35）',
-        topSub: '本月 · 单人均值 111.3h', topH: 168, hbSum: '本月合计 · 单位：人次',
-        hbScale: 4.2, boost: 0.5, rows: 16,
-    },
-    season: {
-        label: '本赛季', title: '近 7 天 × 24 时 段 登 录 热 力 图', tag: '本赛季抽样',
-        total: 52318, avg: 3.66, stale: 19, peak: 44,
-        staleLabel: '赛内 7 日 未 登 录', peakLabel: '赛内同 时 在 线 峰 值',
-        totalSub: '赛季总计 · 环比 <span class="up">↑ 11.7%</span>',
-        avgSub: '日均活跃时长 · 环比 <span class="up">↑ 0.06h</span>',
-        staleSub: '需私发提醒 · 较上赛季 <span class="up">↓ 6 人</span>',
-        peakSub: '赛季峰值 <span style="color:var(--gold);">88 人</span>（决战夜 21:12）',
-        topSub: '本赛季 · 单人均值 396.4h', topH: 322, hbSum: '赛季合计 · 单位：人次',
-        hbScale: 15, boost: 0.9, rows: 16,
-    },
-};
-
-const RANGE_VIEW = ['ovTotal','ovAvg','ovStale','ovPeak'];
+/* ============================================================
+   在线时长统计：全部读 Supabase members 表（本周快照）
+   - hours_week   本周在线时长
+   - online       当前是否在线
+   - last_login   最近活跃时间（文本，由后台填写）
+   - active_history 近7日活跃（7 个数字，末位为最新）
+   不再生成任何假成员 / 假 IP / 假热力图
+   ============================================================ */
+let MEMBERS = [];
 
 function setNum(id, value){
     const el = document.getElementById(id);
     if (!el) return;
     el.setAttribute('data-count', value);
-    // 立即刷新（base.js 的首次 countUp 只在进入视口时触发一次）
     const decimals = (String(value).split('.')[1] || '').length;
     el.textContent = Number(value).toLocaleString('en-US', {
         minimumFractionDigits: decimals, maximumFractionDigits: decimals
     });
 }
-
-function applyRange(key){
-    const d = RANGE_DATA[key] || RANGE_DATA.d7;
-    setNum('ovTotal', d.total);
-    setNum('ovAvg', d.avg);
-    setNum('ovStale', d.stale);
-    setNum('ovPeak', d.peak);
-    setText('ovTotalSub', d.totalSub, true);
-    setText('ovAvgSub', d.avgSub, true);
-    setText('ovStaleSub', d.staleSub, true);
-    setText('ovPeakSub', d.peakSub, true);
-    setText('ovStaleLabel', d.staleLabel);
-    setText('ovPeakLabel', d.peakLabel);
-    setText('hmTitle', d.title);
-    setText('hmTag', d.tag);
-    setText('hbSum', d.hbSum);
-    setText('topSub', d.topSub);
-
-    renderHeatmap(d.boost);
-    renderHourBars(d.hbScale);
-    renderTopHours(d.topH);
-    renderLoginList(d.rows);
-}
-
 function setText(id, html, isHtml){
     const el = document.getElementById(id);
     if (!el) return;
     if (isHtml) el.innerHTML = html; else el.textContent = html;
 }
 
-// base.js 在 tab 切换时派发 tabchange 事件
-document.addEventListener('tabchange', function (e) {
-    if (e.detail.group === 'range') applyRange(e.detail.tab);
-});
+function renderOverview(){
+    const n = MEMBERS.length;
+    const online = MEMBERS.filter(m => m.online === true).length;
+    const offline = n - online;
+    const totalH = MEMBERS.reduce((a, m) => a + (+m.hours_week || 0), 0);
+    setNum('ovTotal', Math.round(totalH));
+    setNum('ovAvg', n ? (totalH / 7 / n).toFixed(2) : '0.00');
+    setNum('ovOnline', online);
+    setNum('ovOffline', offline);
+    setText('ovTotalSub', n ? `全宗门本周快照 · 共 ${n} 人` : '尚无成员数据');
+    setText('ovAvgSub', n ? `本周人均 ${ (totalH / n).toFixed(1) } 小时` : '尚无成员数据');
+    setText('ovOnlineSub', '以成员表在线状态为准');
+    setText('ovOfflineSub', '可私聊提醒上线');
+}
 
-applyRange('d7');
+function renderTrend(){
+    const el = document.getElementById('weekTrend');
+    if (!el) return;
+    const bars = [0, 0, 0, 0, 0, 0, 0];
+    let has = false;
+    MEMBERS.forEach(m => {
+        const h = Array.isArray(m.active_history) ? m.active_history : [];
+        for (let i = 0; i < 7; i++) {
+            const v = Number(h[i]) || 0;
+            if (v > 0) has = true;
+            bars[i] += v;
+        }
+    });
+    if (!has) {
+        el.innerHTML = '<div style="grid-column:1/-1;color:#777;font-size:13px;">暂无近7日活跃数据（在后台为成员填写「近7日活跃」后这里会展示）</div>';
+        return;
+    }
+    const labels = ['7 天前', '6 天前', '5 天前', '4 天前', '3 天前', '昨天', '今天'];
+    const max = Math.max(1, ...bars);
+    el.innerHTML = bars.map((v, i) => {
+        const pct = Math.round(v / max * 100);
+        return `<div class="hb-label">${labels[i]}</div>
+                <div class="hb-track"><span style="width:${pct}%;"></span></div>
+                <div class="hb-val">${v} 点</div>`;
+    }).join('');
+}
+
+function renderTopHours(){
+    const el = document.getElementById('hoursList');
+    if (!el) return;
+    const top = MEMBERS.slice()
+        .sort((a, b) => (+b.hours_week || 0) - (+a.hours_week || 0))
+        .slice(0, 10);
+    if (!top.length) {
+        el.innerHTML = '<div style="color:#777;font-size:13px;padding:16px 0;">暂无成员数据，请先在管理后台添加成员</div>';
+        return;
+    }
+    const max = Math.max(1, +top[0].hours_week || 0);
+    el.innerHTML = top.map((m, i) => {
+        const h = +m.hours_week || 0;
+        const pct = Math.round(h / max * 100);
+        const name = m.name || '（未命名）';
+        return `<div class="hours-row">
+            <div class="hours-rank ${i < 3 ? 'rank-' + (i + 1) : ''}" style="color:${i >= 3 ? '#888' : 'inherit'};">${i + 1}</div>
+            <div>
+                <span class="hours-avatar">${name.slice(0, 2)}</span>
+                <span class="hours-name">${name}</span>
+                <div class="hours-meta">${m.school || ''} ${m.weapon ? '· ' + m.weapon : ''} · 身份 ${m.role || '社众'}</div>
+                <div class="hours-bar"><span style="width:${pct}%"></span></div>
+            </div>
+            <div class="hours-val">${h}<small>h</small></div>
+        </div>`;
+    }).join('');
+}
+
+function renderLoginList(){
+    const ll = document.getElementById('loginList');
+    if (!ll) return;
+    if (!MEMBERS.length) {
+        ll.innerHTML = '<div style="color:#777;font-size:13px;padding:20px;">暂无成员数据</div>';
+        setText('loginSub', '暂无数据');
+        return;
+    }
+    let h = `<div class="login-head">
+        <div>状 态</div><div>成 员 / 武 器</div><div>武 学 流 派</div><div>本 周 在 线</div><div>最 近 活 跃</div>
+    </div>`;
+    MEMBERS.slice()
+        .sort((a, b) => (b.online === true) - (a.online === true))
+        .forEach(m => {
+            const on = m.online === true;
+            const color = on ? 'var(--jade-light)' : '#888';
+            h += `<div class="login-row">
+                <div><span class="login-dot ${on ? 'dot-on' : 'dot-off'}"></span>${on ? '<span style="color:#9cd3b0;">在线</span>' : '<span style="color:#888;">离线</span>'}</div>
+                <div><span style="color:var(--paper);font-size:14px;letter-spacing:1px;">${m.name || '（未命名）'}</span> &nbsp; <span class="w-tag w-${m.weapon || ''}">${m.weapon || '—'}</span></div>
+                <div><span class="loc-tag">${m.school || '—'}</span></div>
+                <div style="color:#777;font-size:12px;font-family:Consolas,monospace;">${(+m.hours_week || 0)} h</div>
+                <div style="color:${color};font-size:13px;">${m.last_login || '—'}</div>
+            </div>`;
+        });
+    ll.innerHTML = h;
+    setText('loginSub', `共 ${MEMBERS.length} 人 · 数据来自成员表`);
+}
+
+function renderStale(){
+    const el = document.getElementById('staleList');
+    if (!el) return;
+    const offline = MEMBERS.filter(m => m.online !== true);
+    if (!offline.length) {
+        el.innerHTML = MEMBERS.length
+            ? '<div style="color:#9cd3b0;font-size:13px;">全员在线，无需唤醒</div>'
+            : '<div style="color:#777;font-size:13px;">暂无成员数据</div>';
+        return;
+    }
+    el.innerHTML = offline.map(m =>
+        `<span style="padding:6px 12px;border:1px dashed var(--red-light);color:#e0a0a0;font-size:13px;">${m.name || '（未命名）'} · ${m.last_login || '未记录活跃时间'}</span>`
+    ).join('');
+}
+
+function applyAll(){
+    renderOverview();
+    renderTrend();
+    renderTopHours();
+    renderLoginList();
+    renderStale();
+}
+
+if (!window.DB) {
+    setText('topSub', '数据层未加载，请刷新页面');
+} else {
+    DB.listMembers().then(function (rows) {
+        MEMBERS = rows || [];
+        applyAll();
+    }).catch(function (err) {
+        console.error('[online]', err);
+        setText('topSub', '数据加载失败：' + (err && err.message || err));
+    });
+}
 </script>
 <script src="assets/base.js" defer></script>
 </body>
