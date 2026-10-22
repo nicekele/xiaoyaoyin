@@ -569,7 +569,7 @@
                         <input type="number" id="lotThreshold" value="2000" min="0" step="100">
                     </div>
                     <div class="field">
-                        <label>奖池（同类型每周每人限中一次）</label>
+                        <label>奖池（点击可停用/启用；停用的不参与抽取）</label>
                         <div id="lotPool" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
                     </div>
                     <div class="field">
@@ -1262,11 +1262,39 @@ function lotWeekKey(){
 var lotMembers = [];
 var lotWins = [];
 
+/* 停用的奖品类型（本机记住，停用后不参与抽取） */
+function lotDisabled(){
+    try { return JSON.parse(localStorage.getItem('lot_disabled') || '[]'); }
+    catch (e) { return []; }
+}
+function saveLotDisabled(arr){
+    try { localStorage.setItem('lot_disabled', JSON.stringify(arr)); } catch (e) {}
+}
+function isLotOff(type){ return lotDisabled().indexOf(type) !== -1; }
+
 function renderLotPool(){
+    var off = lotDisabled();
     document.getElementById('lotPool').innerHTML = LOT_PRIZES.map(function(p){
-        return '<span style="padding:5px 12px;border:1px solid rgba(201,169,97,.4);color:var(--gold-light);font-size:13px;letter-spacing:1px;">' + escapeHtml(p.name) + '</span>';
+        var isOff = off.indexOf(p.type) !== -1;
+        return '<span class="lot-chip' + (isOff ? ' off' : '') + '" data-lot-type="' + p.type + '" ' +
+            'style="padding:5px 12px;border:1px solid ' + (isOff ? 'rgba(140,140,140,.35)' : 'rgba(201,169,97,.4)') + ';' +
+            'color:' + (isOff ? '#666' : 'var(--gold-light)') + ';font-size:13px;letter-spacing:1px;' +
+            'cursor:pointer;user-select:none;' + (isOff ? 'text-decoration:line-through;' : '') + '" ' +
+            'title="' + (isOff ? '点击启用' : '点击停用') + '">' +
+            escapeHtml(p.name) + (isOff ? '（停用）' : '') + '</span>';
     }).join('');
 }
+
+document.getElementById('lotPool').addEventListener('click', function(e){
+    var chip = e.target.closest('[data-lot-type]');
+    if (!chip) return;
+    var type = chip.getAttribute('data-lot-type');
+    var off = lotDisabled();
+    var i = off.indexOf(type);
+    if (i === -1) off.push(type); else off.splice(i, 1);
+    saveLotDisabled(off);
+    renderLotPool();
+});
 
 function renderLotMemberSelect(){
     var sel = document.getElementById('lotMember');
@@ -1325,12 +1353,12 @@ document.getElementById('btnDraw').addEventListener('click', function(){
         setMsg('lotMsg', '「' + m.name + '」周活跃 ' + (m.active || 0) + '，未达门槛 ' + threshold, 'err');
         return;
     }
-    /* 本周该成员已中的类型 → 从奖池剔除，同类不重复 */
+    /* 本周该成员已中的类型 + 已停用的类型 → 从奖池剔除，同类不重复 */
     var wonTypes = {};
     lotWins.forEach(function(w){ if (w.member_id === mid) wonTypes[w.prize_type] = true; });
-    var remain = LOT_PRIZES.filter(function(p){ return !wonTypes[p.type]; });
+    var remain = LOT_PRIZES.filter(function(p){ return !wonTypes[p.type] && !isLotOff(p.type); });
     if (!remain.length) {
-        setMsg('lotMsg', '该成员本周已抽中过全部奖池类型，下周再来', 'err');
+        setMsg('lotMsg', '该成员本周可抽的奖品已抽完（或奖池已全部停用），下周再来', 'err');
         document.getElementById('lotResult').textContent = '';
         return;
     }
