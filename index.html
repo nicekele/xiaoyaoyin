@@ -2080,10 +2080,10 @@
         </div>
     </div>
 
-    <!-- 活动时间表 -->
+    <!-- 活动时间表（数据来自数据库，管理后台可编辑；下方为加载前的默认骨架） -->
     <div class="schedule-box" id="schedule">
         <h3 class="schedule-head-title">◆ 活 动 时 间 表 ◆</h3>
-        <div class="schedule-daily">
+        <div class="schedule-daily" id="schedDaily">
             <div class="schedule-daily-time">
                 <div class="t">19:30</div>
                 <div class="d">每 日</div>
@@ -2093,7 +2093,7 @@
                 <div class="s">宗门成员准时进入「燕语阁」派对，交流互动，增进情谊</div>
             </div>
         </div>
-        <div class="schedule-week">
+        <div class="schedule-week" id="schedWeek">
             <div class="schedule-week-header">周 一</div>
             <div class="schedule-week-header">周 二</div>
             <div class="schedule-week-header">周 三</div>
@@ -2527,6 +2527,79 @@ const CONTACT_OWNER = {
     modal.addEventListener("click", function (e) { if (e.target.hasAttribute("data-close")) close(); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
 })();
+
+/* ---------- 活动时间表：读数据库，管理后台可改 ---------- */
+const SCHED_BOSSES = [
+    "无相皇","叶万山","小十七","寻心","蛇郎中","皮影师","煞地神","伊刀","道主","舞狮",
+    "寄棺主","郑鄂","醉拳客","鬼谷子","无名将军","白狼主","安西大都护","望月婵媛","天禄","镇关吼",
+    "缺口袋把戏团","听梅点雪","玼兮瑳兮","铁心蜈","帷帽女","月中师","打更人","青","笃墨蝎","拏云蛇"
+];
+const SCHED_EVENT = {
+    week:    { icon: "⚔", name: "百业侠境·周本", cls: "red-e",  tagCls: "r", tag: "燕语阁集合" },
+    pojun:   { icon: "🐉", name: "破军杀将",     cls: "gold-e", tagCls: "g", tag: "可改时间" },
+    yijue:   { icon: "🏆", name: "一决高下",     cls: "jade-e", tagCls: "j", tag: "PVP模式" },
+    weekend: { icon: "⚔", name: "百叶本/百业战", cls: "red-e",  tagCls: "r", tag: "燕语阁必进" },
+    rest:    { icon: "🌙", name: "休 息",        cls: "",       tagCls: "",  tag: "" },
+};
+const SCHED_DEFAULT = {
+    party: { time: "19:30" },
+    days: [
+        { type: "week",    time: "19:30",       note: "组队开团" },
+        { type: "pojun",   time: "20:00-22:00", boss: "无相皇", note: "BOSS讨伐" },
+        { type: "yijue",   time: "20:00",       note: "PVP竞技对决" },
+        { type: "pojun",   time: "20:00-22:00", boss: "无相皇", note: "BOSS讨伐再战" },
+        { type: "yijue",   time: "20:00",       note: "周末预热赛" },
+        { type: "weekend", time: "全 天",       note: "全员参战" },
+        { type: "weekend", time: "全 天",       note: "周末终极战" },
+    ],
+};
+function renderSchedule(data){
+    const d = (data && Array.isArray(data.days) && data.days.length === 7) ? data : SCHED_DEFAULT;
+    const partyT = (d.party && d.party.time) || "19:30";
+    const daily = document.getElementById("schedDaily");
+    if (daily) {
+        daily.innerHTML =
+            `<div class="schedule-daily-time">
+                <div class="t">${partyT}</div>
+                <div class="d">每 日</div>
+            </div>
+            <div class="schedule-daily-info">
+                <div class="n">🎭 每 晚 派 对 时 间 · 燕 语 阁</div>
+                <div class="s">宗门成员准时进入「燕语阁」派对，交流互动，增进情谊</div>
+            </div>`;
+    }
+    const week = document.getElementById("schedWeek");
+    if (!week) return;
+    const heads = ["周一","周二","周三","周四","周五","周六","周日"]
+        .map(x => `<div class="schedule-week-header">${x}</div>`).join("");
+    const cells = d.days.map((day, i) => {
+        const ev = SCHED_EVENT[day.type] || SCHED_EVENT.rest;
+        let note = "";
+        if (day.type === "pojun") note = day.boss ? "讨伐 · " + day.boss : "BOSS待定";
+        else note = day.note || "";
+        if (day.type === "rest") {
+            return `<div class="schedule-week-cell${i % 2 ? " off-bg" : ""}">
+                <div class="sched-time">—</div>
+                <div class="sched-event" style="color:#666;">🌙 休 息</div>
+                <div class="sched-note" style="color:#555;">无安排</div>
+            </div>`;
+        }
+        return `<div class="schedule-week-cell${i % 2 ? " off-bg" : ""}">
+            <div class="sched-time">${day.time || "—"}</div>
+            <div class="sched-event ${ev.cls}">${ev.icon} ${ev.name}</div>
+            <div class="sched-note">${note}</div>
+            ${ev.tag ? `<span class="sched-tag ${ev.tagCls}">${ev.tag}</span>` : ""}
+        </div>`;
+    }).join("");
+    week.innerHTML = heads + cells;
+}
+renderSchedule(SCHED_DEFAULT);
+if (window.DB) {
+    DB.listSect().then(function (rows) {
+        const row = (rows || []).find(function (r) { return r.id === "schedule"; });
+        if (row && row.content) renderSchedule(row.content);
+    }).catch(function () { /* 读不到就保持默认骨架 */ });
+}
 
 /* ---------- 燕云世界：6 个地区 ---------- */
 const WORLDS = {

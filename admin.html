@@ -407,6 +407,7 @@
             <button type="button" data-tab="posts">内容发布</button>
             <button type="button" data-tab="invite">账号管理</button>
             <button type="button" data-tab="lottery">活跃抽奖</button>
+            <button type="button" data-tab="schedule">活动时间表</button>
         </div>
 
         <!-- 成员管理 -->
@@ -597,6 +598,26 @@
                     </div>
                     <p class="hint">撤销记录后，该成员可重新抽取此类型奖品。</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- 活动时间表编辑 -->
+        <div data-tab-panel="schedule" data-tab-group="maintab" hidden>
+            <div class="panel">
+                <div class="panel-title2">活 动 时 间 表 · 仅 管 理 可 改</div>
+                <p class="hint" style="border:none;padding-top:0;margin-top:0;">
+                    修改后点保存，官网首页时间表立即生效。<br>
+                    破军杀将：每天可选时段（如 20:00-22:00）和 BOSS（可重复挑）；把某天类型改成「破军/一决」即可互换星期。
+                </p>
+                <div class="field" style="margin-top:14px;max-width:280px;">
+                    <label>每晚派对时间（统一）</label>
+                    <input type="text" id="scParty" placeholder="如：19:30">
+                </div>
+                <div id="scDays" style="display:flex;flex-direction:column;gap:12px;margin-top:10px;"></div>
+                <div class="form-actions" style="margin-top:18px;">
+                    <button class="btn btn-primary" type="button" id="btnSaveSched">保 存 时 间 表</button>
+                </div>
+                <div class="msg" id="scMsg"></div>
             </div>
         </div>
     </div>
@@ -916,6 +937,7 @@ function loadAll(){
     loadPosts();
     loadAccounts();
     loadLottery();
+    loadSched();
 }
 
 /* 成员列表 */
@@ -1459,9 +1481,98 @@ document.getElementById('lotBody').addEventListener('click', function(e){
     });
 });
 
-/* 切到抽奖页签时刷新成员与记录 */
+/* 切到抽奖/时间表页签时刷新 */
 document.addEventListener('tabchange', function(e){
-    if (e.detail && e.detail.group === 'maintab' && e.detail.tab === 'lottery') loadLottery();
+    if (!e.detail || e.detail.group !== 'maintab') return;
+    if (e.detail.tab === 'lottery') loadLottery();
+    if (e.detail.tab === 'schedule') loadSched();
+});
+
+/* ---------- 活动时间表编辑 ---------- */
+var SC_BOSSES = [
+    "无相皇","叶万山","小十七","寻心","蛇郎中","皮影师","煞地神","伊刀","道主","舞狮",
+    "寄棺主","郑鄂","醉拳客","鬼谷子","无名将军","白狼主","安西大都护","望月婵媛","天禄","镇关吼",
+    "缺口袋把戏团","听梅点雪","玼兮瑳兮","铁心蜈","帷帽女","月中师","打更人","青","笃墨蝎","拏云蛇"
+];
+var SC_DAYS = ["周一","周二","周三","周四","周五","周六","周日"];
+var SC_TYPES = [
+    { v: "week",    t: "百业侠境·周本" },
+    { v: "pojun",   t: "破军杀将" },
+    { v: "yijue",   t: "一决高下" },
+    { v: "weekend", t: "百叶本/百业战" },
+    { v: "rest",    t: "休息" },
+];
+var SC_DEFAULT = {
+    party: { time: "19:30" },
+    days: [
+        { type: "week",    time: "19:30",       boss: "", note: "组队开团" },
+        { type: "pojun",   time: "20:00-22:00", boss: "无相皇", note: "BOSS讨伐" },
+        { type: "yijue",   time: "20:00",       boss: "", note: "PVP竞技对决" },
+        { type: "pojun",   time: "20:00-22:00", boss: "无相皇", note: "BOSS讨伐再战" },
+        { type: "yijue",   time: "20:00",       boss: "", note: "周末预热赛" },
+        { type: "weekend", time: "全 天",       boss: "", note: "全员参战" },
+        { type: "weekend", time: "全 天",       boss: "", note: "周末终极战" },
+    ],
+};
+
+function buildSchedForm(data){
+    var d = (data && data.days) ? data : SC_DEFAULT;
+    document.getElementById('scParty').value = (d.party && d.party.time) || '19:30';
+    var box = document.getElementById('scDays');
+    box.innerHTML = SC_DAYS.map(function (name, i) {
+        var day = d.days[i] || {};
+        var typeOpts = SC_TYPES.map(function (tp) {
+            return '<option value="' + tp.v + '"' + (day.type === tp.v ? ' selected' : '') + '>' + tp.t + '</option>';
+        }).join('');
+        var bossOpts = ['<option value="">（未选择）</option>'].concat(SC_BOSSES.map(function (b) {
+            return '<option' + (day.boss === b ? ' selected' : '') + '>' + b + '</option>';
+        })).join('');
+        return '<div style="display:grid;grid-template-columns:70px 160px 150px 150px 1fr;gap:10px;align-items:center;">' +
+            '<b style="color:var(--gold);letter-spacing:1px;">' + name + '</b>' +
+            '<select id="scType' + i + '" onchange="scTypeChange(' + i + ')">' + typeOpts + '</select>' +
+            '<input type="text" id="scTime' + i + '" placeholder="如 20:00-22:00" value="' + escapeHtml(day.time || '') + '">' +
+            '<select id="scBoss' + i + '">' + bossOpts + '</select>' +
+            '<input type="text" id="scNote' + i + '" placeholder="备注（破军显示BOSS名）" value="' + escapeHtml(day.note || '') + '">' +
+        '</div>';
+    }).join('');
+    SC_DAYS.forEach(function (_, i) { scTypeChange(i); });
+}
+function scTypeChange(i){
+    var t = document.getElementById('scType' + i).value;
+    var boss = document.getElementById('scBoss' + i);
+    boss.disabled = (t !== 'pojun');
+    boss.style.opacity = (t === 'pojun') ? '1' : '0.35';
+}
+
+function loadSched(){
+    if (!window.DB) { buildSchedForm(SC_DEFAULT); return; }
+    DB.listSect().then(function (rows) {
+        var row = (rows || []).find(function (r) { return r.id === 'schedule'; });
+        buildSchedForm(row && row.content ? row.content : SC_DEFAULT);
+    }).catch(function (e) {
+        buildSchedForm(SC_DEFAULT);
+        setMsg('scMsg', '读取失败，已显示默认值：' + (e.message || e), 'err');
+    });
+}
+
+document.getElementById('btnSaveSched').addEventListener('click', function () {
+    var content = {
+        party: { time: document.getElementById('scParty').value.trim() || '19:30' },
+        days: SC_DAYS.map(function (_, i) {
+            return {
+                type: document.getElementById('scType' + i).value,
+                time: document.getElementById('scTime' + i).value.trim(),
+                boss: document.getElementById('scBoss' + i).value,
+                note: document.getElementById('scNote' + i).value.trim(),
+            };
+        }),
+    };
+    setMsg('scMsg', '正在保存…');
+    DB.saveSect([{ id: 'schedule', title: '活动时间表', content: content }]).then(function () {
+        setMsg('scMsg', '已保存，官网首页时间表已更新', 'ok');
+    }).catch(function (err) {
+        setMsg('scMsg', '保存失败：' + (err.message || '权限不足'), 'err');
+    });
 });
 
 /* ---------- 启动 ---------- */
