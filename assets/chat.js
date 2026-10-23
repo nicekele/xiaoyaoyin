@@ -251,6 +251,7 @@
 
     var FALLBACK = '这个问题我记下了，智能客服还不太懂~\n你可以换个问法，或直接点首页页脚「联系社主」加微信人工咨询。';
 
+    /* ---------- AI 问答（Supabase Edge Function → DeepSeek）失败时回退关键词 ---------- */
     function botReply(text) {
         var t = (text || '').toLowerCase();
         for (var i = 0; i < RULES.length; i++) {
@@ -261,18 +262,55 @@
         return null;
     }
 
-    function reply(text) {
+    function aiReply(text, sched) {
+        var cfg = global.APP_CONFIG || {};
+        if (!cfg.SUPABASE_URL || !cfg.SUPABASE_KEY) return Promise.resolve(null);
+        if (typeof AbortController === 'undefined') return Promise.resolve(null);
+        var ctrl = new AbortController();
+        var timer = setTimeout(function () { ctrl.abort(); }, 15000);
+        return fetch(cfg.SUPABASE_URL + '/functions/v1/ai-chat', {
+            method: 'POST',
+            signal: ctrl.signal,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + cfg.SUPABASE_KEY,
+                'apikey': cfg.SUPABASE_KEY,
+            },
+            body: JSON.stringify({
+                message: text,
+                today: WD[todayIndex()],
+                schedule: sched || null,
+            }),
+        }).then(function (r) { return r.json(); }).then(function (j) {
+            clearTimeout(timer);
+            return (j && j.reply) ? j.reply : null;
+        }).catch(function () {
+            clearTimeout(timer);
+            return null;
+        });
+    }
+
+    function ruleReply(text, sched) {
         var rule = botReply(text);
+        if (!rule) return FALLBACK;
+        if (['破军', '派对', '活动', '一决'].indexOf(rule.keys[0]) !== -1) {
+            return rule.reply(sched);
+        }
+        return rule.reply();
+    }
+
+    function reply(text) {
         var typing = addMsg('bot', '正在输入…', false);
-        setTimeout(function () {
+        getSchedule().then(function (sched) {
+            return aiReply(text, sched).then(function (ai) {
+                typing.remove();
+                if (ai) { addMsg('bot', ai); return; }
+                addMsg('bot', ruleReply(text, sched));
+            });
+        }).catch(function () {
             typing.remove();
-            if (!rule) { addMsg('bot', FALLBACK); return; }
-            if (rule.keys[0] === '破军' || rule.keys[0] === '派对' || rule.keys[0] === '活动' || rule.keys[0] === '一决') {
-                getSchedule().then(function (s) { addMsg('bot', rule.reply(s)); });
-            } else {
-                addMsg('bot', rule.reply());
-            }
-        }, 500 + Math.random() * 500);
+            addMsg('bot', ruleReply(text, null));
+        });
     }
 
     function send(text) {
