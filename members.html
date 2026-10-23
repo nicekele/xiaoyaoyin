@@ -236,7 +236,7 @@
             <span></span><span></span><span></span>
         </button>
         <div class="nav-right">
-            <button class="nav-btn" onclick="exportData()">📤 导出数据</button>
+            <button class="nav-btn" data-admin-only onclick="exportData()">📤 导出数据</button>
             <button class="nav-btn nav-btn-primary" data-admin-only onclick="addMemberBtn()">➕ 添加成员</button>
         </div>
     </nav>
@@ -409,7 +409,9 @@ function applyFilters(list){
         if (fSch && m.school !== fSch) return false;
         if (fR && m.role !== fR) return false;
         if (kw) {
-            const s = (m.name + m.weapon + m.xinfa + m.school + m.gameId).toLowerCase();
+            /* 游戏ID默认不参与游客搜索，防止打码被完整ID反查；仅管理员搜索时匹配 */
+            let s = (m.name + m.weapon + m.xinfa + m.school).toLowerCase();
+            if (isAdminUser) s += m.gameId.toLowerCase();
             if (!s.includes(kw)) return false;
         }
         return true;
@@ -597,7 +599,30 @@ function delMem(id){
     }
 }
 function addMemberBtn(){ location.href = "admin.html"; }
-function exportData(){ alert("📤 数据导出中...\n支持 Excel / CSV / JSON 三种格式导出。"); }
+function exportData(){
+    if (!isAdminUser) { alert("导出需要管理员权限，请先在管理后台登录。"); return; }
+    if (!window.DB) return;
+    DB.listMembers().then(function(rows){
+        exportMembersCsv(rows || []);
+    }).catch(function(e){
+        alert("导出失败：" + (e && e.message || e));
+    });
+}
+/* CSV 导出（含完整游戏ID，仅管理员可用） */
+function exportMembersCsv(rows){
+    const head = ["ID","姓名","游戏ID","武学门派","本职心法","主修武器","身份","等级","周活跃","月活跃","本周打本","本周在线时长"];
+    const lines = [head.join(",")];
+    rows.forEach(function(m){
+        const cols = [m.id, m.name, m.game_id||"", m.school||"", m.xinfa||"", m.weapon||"", m.role||"", m.level, m.active, m.active_month||0, m.runs, m.hours_week||0];
+        lines.push(cols.map(function(c){ return '"' + String(c).replace(/"/g,'""') + '"'; }).join(","));
+    });
+    const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "成员数据_" + new Date().toISOString().slice(0,10) + ".csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(a.href);
+}
 
 // 先渲染加载态，再异步读取云端成员数据
 renderTable();

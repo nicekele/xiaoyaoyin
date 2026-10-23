@@ -416,13 +416,16 @@
         <div data-tab-panel="members" data-tab-group="maintab">
             <div class="grid-2">
                 <div>
-                    <div class="panel-title2">成 员 列 表</div>
+                    <div class="panel-title2" style="display:flex;justify-content:space-between;align-items:center;">
+                        <span>成 员 列 表</span>
+                        <button class="op" type="button" id="btnExportCsv">导出CSV</button>
+                    </div>
                     <div class="table-wrap">
                         <table class="tbl" id="memTbl">
                             <thead>
                                 <tr>
-                                    <th>姓名</th><th>门派</th><th>身份</th>
-                                    <th>等级</th><th>周活跃</th><th>打本</th><th>操作</th>
+                                    <th>姓名</th><th>游戏ID</th><th>门派</th><th>身份</th>
+                                    <th>等级</th><th>周活跃</th><th>月活跃</th><th>打本</th><th>操作</th>
                                 </tr>
                             </thead>
                             <tbody id="memBody"></tbody>
@@ -992,16 +995,18 @@ function loadMembers(){
     DB.listMembers().then(function(rows){
         var tb = document.getElementById('memBody');
         if (!rows.length) {
-            tb.innerHTML = '<tr><td colspan="7" class="empty">暂无成员，请在右侧添加</td></tr>';
+            tb.innerHTML = '<tr><td colspan="9" class="empty">暂无成员，请在右侧添加</td></tr>';
             return;
         }
         tb.innerHTML = rows.map(function(m){
             return '<tr>' +
                 '<td style="color:var(--paper)">' + escapeHtml(m.name) + '</td>' +
+                '<td style="font-family:Consolas,monospace;color:#c9a961;">' + escapeHtml(m.game_id || '—') + '</td>' +
                 '<td>' + badge(m.school, 'sc') + '</td>' +
                 '<td>' + roleTag(m.role) + '</td>' +
                 '<td>Lv.' + (m.level || 100) + '</td>' +
                 '<td style="color:var(--gold)">' + (m.active || 0) + '</td>' +
+                '<td style="color:#a6c8e8">' + (m.active_month || 0) + '</td>' +
                 '<td>' + (m.runs || 0) + '</td>' +
                 '<td>' +
                     '<button class="op" data-edit="' + m.id + '">编辑</button>' +
@@ -1011,9 +1016,28 @@ function loadMembers(){
         }).join('');
     }).catch(function(e){
         document.getElementById('memBody').innerHTML =
-            '<tr><td colspan="7" class="empty">读取失败：' + escapeHtml(e.message) + '</td></tr>';
+            '<tr><td colspan="9" class="empty">读取失败：' + escapeHtml(e.message) + '</td></tr>';
     });
 }
+
+document.getElementById('btnExportCsv').addEventListener('click', function(){
+    DB.listMembers().then(function(rows){
+        var head = ["ID","姓名","游戏ID","武学门派","本职心法","主修武器","身份","等级","周活跃","月活跃","本周打本","本周在线时长"];
+        var lines = [head.join(",")];
+        (rows || []).forEach(function(m){
+            var cols = [m.id, m.name, m.game_id||"", m.school||"", m.xinfa||"", m.weapon||"", m.role||"", m.level, m.active, m.active_month||0, m.runs, m.hours_week||0];
+            lines.push(cols.map(function(c){ return '"' + String(c).replace(/"/g,'""') + '"'; }).join(","));
+        });
+        var blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "成员数据_" + new Date().toISOString().slice(0,10) + ".csv";
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(a.href);
+    }).catch(function(err){
+        alert("导出失败：" + (err.message || err));
+    });
+});
 
 function badge(key, prefix){
     if (!key) return '—';
