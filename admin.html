@@ -409,6 +409,7 @@
             <button type="button" data-tab="lottery">活跃抽奖</button>
             <button type="button" data-tab="schedule">活动时间表</button>
             <button type="button" data-tab="push">微信推送</button>
+            <button type="button" data-tab="chatlog">客服记录</button>
         </div>
 
         <!-- 成员管理 -->
@@ -643,6 +644,26 @@
                     <button class="btn btn-primary" type="button" id="btnPushSend">📣 发 送 推 送</button>
                 </div>
                 <div class="msg" id="pushMsg"></div>
+            </div>
+        </div>
+
+        <!-- 客服聊天记录 -->
+        <div data-tab-panel="chatlog" data-tab-group="maintab" hidden>
+            <div class="grid-2">
+                <div class="panel">
+                    <div class="panel-title2">访 客 会 话</div>
+                    <p class="hint" style="border:none;padding-top:0;margin-top:0;" id="chatVisHint">加载中…</p>
+                    <div class="table-wrap">
+                        <table class="tbl">
+                            <thead><tr><th>访客</th><th>消息数</th><th>最近活跃</th><th></th></tr></thead>
+                            <tbody id="chatVisBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-title2" id="chatThreadTitle">会 话 详 情</div>
+                    <div id="chatThread" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;max-height:480px;overflow-y:auto;"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -963,6 +984,7 @@ function loadAll(){
     loadAccounts();
     loadLottery();
     loadSched();
+    loadChatLogs();
 }
 
 /* 成员列表 */
@@ -1512,6 +1534,7 @@ document.addEventListener('tabchange', function(e){
     if (e.detail.tab === 'lottery') loadLottery();
     if (e.detail.tab === 'schedule') loadSched();
     if (e.detail.tab === 'push') loadPushPreview();
+    if (e.detail.tab === 'chatlog') loadChatLogs();
 });
 
 /* ---------- 活动时间表编辑 ---------- */
@@ -1681,6 +1704,75 @@ document.getElementById("btnPushSend").addEventListener("click", function () {
     }).catch(function (e) {
         setMsg("pushMsg", "网络错误：" + (e.message || e), "err");
     });
+});
+
+/* ---------- 客服记录 ---------- */
+var chatAll = [];
+var chatVisitors = [];
+
+function loadChatLogs(){
+    if (!window.DB) return;
+    DB.client.from('chat_logs').select('*').order('id', { ascending: true }).limit(500)
+        .then(function (r) {
+            if (r.error) throw r.error;
+            chatAll = r.data || [];
+            var byV = {};
+            chatAll.forEach(function (m) {
+                if (!byV[m.visitor_id]) {
+                    byV[m.visitor_id] = { id: m.visitor_id, count: 0, last: m.created_at, firstMsg: '' };
+                    chatVisitors.push(byV[m.visitor_id]);
+                }
+                byV[m.visitor_id].count++;
+                byV[m.visitor_id].last = m.created_at;
+                if (!byV[m.visitor_id].firstMsg && m.role === 'user') {
+                    byV[m.visitor_id].firstMsg = m.message;
+                }
+            });
+            chatVisitors.sort(function (a, b) { return new Date(b.last) - new Date(a.last); });
+            renderChatVisitors();
+        }).catch(function (e) {
+            document.getElementById('chatVisBody').innerHTML =
+                '<tr><td colspan="4" class="empty">' + escapeHtml(e.message || '读取失败（请先执行 schema.sql v6）') + '</td></tr>';
+        });
+}
+
+function renderChatVisitors(){
+    var tb = document.getElementById('chatVisBody');
+    document.getElementById('chatVisHint').textContent =
+        '共 ' + chatVisitors.length + ' 位访客 · 最近 ' + chatAll.length + ' 条消息（仅显示最新 500 条）';
+    if (!chatVisitors.length) {
+        tb.innerHTML = '<tr><td colspan="4" class="empty">暂无客服会话</td></tr>';
+        return;
+    }
+    tb.innerHTML = chatVisitors.map(function (v) {
+        var t = new Date(v.last);
+        var ts = (t.getMonth() + 1) + '/' + t.getDate() + ' ' + ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2);
+        return '<tr>' +
+            '<td style="color:var(--paper);font-family:Consolas,monospace;">' + escapeHtml(v.id.slice(0, 12)) + '…</td>' +
+            '<td>' + v.count + '</td>' +
+            '<td style="color:#8f8877">' + ts + '</td>' +
+            '<td><button class="op" data-chat-view="' + escapeHtml(v.id) + '">查看</button></td>' +
+        '</tr>';
+    }).join('');
+}
+
+document.getElementById('chatVisBody').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-chat-view]');
+    if (!b) return;
+    var vid = b.getAttribute('data-chat-view');
+    var v = chatVisitors.find(function (x) { return x.id === vid; });
+    document.getElementById('chatThreadTitle').textContent = '会话详情 · ' + vid.slice(0, 12) + '…';
+    var box = document.getElementById('chatThread');
+    var rows = chatAll.filter(function (m) { return m.visitor_id === vid; });
+    if (!rows.length) { box.innerHTML = '<div style="color:#777;font-size:13px;">无消息</div>'; return; }
+    box.innerHTML = rows.map(function (m) {
+        var isUser = m.role === 'user';
+        return '<div style="max-width:88%;align-self:' + (isUser ? 'flex-end' : 'flex-start') + ';' +
+            'padding:8px 12px;border-radius:8px;font-size:13px;line-height:1.6;white-space:pre-wrap;' +
+            'background:' + (isUser ? '#3a2f18;color:#f0e6cf' : '#1c1a20;color:#d8d2c4') + ';">' +
+            escapeHtml(m.message) + '</div>';
+    }).join('');
+    box.scrollTop = 0;
 });
 
 /* ---------- 启动 ---------- */

@@ -303,3 +303,35 @@ alter table public.members
     add column if not exists active_month int not null default 0;
 
 NOTIFY pgrst, 'reload schema';
+
+
+-- ============================================================
+-- v6 扩充：在线客服聊天记录（可重复执行）
+-- 游客可写入自己的发言；仅管理员可阅读全部记录
+-- ============================================================
+
+create table if not exists public.chat_logs (
+  id bigserial primary key,
+  visitor_id text not null,
+  role text not null,          -- user | bot
+  message text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.chat_logs enable row level security;
+
+drop policy if exists "chat_insert_open" on public.chat_logs;
+create policy "chat_insert_open"
+  on public.chat_logs for insert
+  with check (true);
+
+drop policy if exists "chat_admin_all" on public.chat_logs;
+create policy "chat_admin_all"
+  on public.chat_logs for all
+  using (public.is_admin())
+  with check (public.is_admin());
+
+create index if not exists idx_chat_visitor on public.chat_logs (visitor_id);
+create index if not exists idx_chat_created on public.chat_logs (created_at desc);
+
+NOTIFY pgrst, 'reload schema';
