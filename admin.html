@@ -408,6 +408,7 @@
             <button type="button" data-tab="invite">账号管理</button>
             <button type="button" data-tab="lottery">活跃抽奖</button>
             <button type="button" data-tab="schedule">活动时间表</button>
+            <button type="button" data-tab="push">微信推送</button>
         </div>
 
         <!-- 成员管理 -->
@@ -618,6 +619,30 @@
                     <button class="btn btn-primary" type="button" id="btnSaveSched">保 存 时 间 表</button>
                 </div>
                 <div class="msg" id="scMsg"></div>
+            </div>
+        </div>
+
+        <!-- 微信推送 -->
+        <div data-tab-panel="push" data-tab-group="maintab" hidden>
+            <div class="panel">
+                <div class="panel-title2">微 信 推 送 · PushPlus</div>
+                <p class="hint" style="border:none;padding-top:0;margin-top:0;">
+                    推送会发到你关注的「推送加」公众号 → 转到个人微信。<br>
+                    文案默认按<span style="color:var(--gold);">今天是周几 + 活动时间表</span>自动生成，可随意修改后再发。
+                </p>
+                <div class="field" style="margin-top:14px;">
+                    <label>标题</label>
+                    <input type="text" id="pushTitle" placeholder="标题">
+                </div>
+                <div class="field">
+                    <label>内容（支持换行）</label>
+                    <textarea id="pushContent" rows="10" style="width:100%;background:#0a0908;border:1px solid rgba(201,169,97,.3);color:var(--paper);padding:12px;border-radius:6px;font-size:14px;line-height:1.7;"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button class="btn" type="button" id="btnPushPreview">🔄 按时间表重新生成</button>
+                    <button class="btn btn-primary" type="button" id="btnPushSend">📣 发 送 推 送</button>
+                </div>
+                <div class="msg" id="pushMsg"></div>
             </div>
         </div>
     </div>
@@ -1486,6 +1511,7 @@ document.addEventListener('tabchange', function(e){
     if (!e.detail || e.detail.group !== 'maintab') return;
     if (e.detail.tab === 'lottery') loadLottery();
     if (e.detail.tab === 'schedule') loadSched();
+    if (e.detail.tab === 'push') loadPushPreview();
 });
 
 /* ---------- 活动时间表编辑 ---------- */
@@ -1572,6 +1598,83 @@ document.getElementById('btnSaveSched').addEventListener('click', function () {
         setMsg('scMsg', '已保存，官网首页时间表已更新', 'ok');
     }).catch(function (err) {
         setMsg('scMsg', '保存失败：' + (err.message || '权限不足'), 'err');
+    });
+});
+
+/* ---------- 微信推送（PushPlus） ---------- */
+var WD = ["周一","周二","周三","周四","周五","周六","周日"];
+
+function pushTodayIndex(){
+    var d = new Date().getDay();      /* 0=周日 */
+    return (d + 6) % 7;               /* 转成 0=周一 */
+}
+
+function buildPushText(sched){
+    var d = (sched && sched.days) ? sched : SC_DEFAULT;
+    var partyT = (d.party && d.party.time) || "19:30";
+    var idx = pushTodayIndex();
+    var day = d.days[idx] || {};
+    var lines = [];
+    lines.push("【逍遥引 · 燕云十六声】");
+    lines.push("今天" + WD[idx] + "活动安排：");
+    lines.push("");
+    lines.push("🎭 每晚派对：" + partyT + " ·「燕语阁」准时集合");
+    if (day.type === "pojun") {
+        lines.push("🐉 破军杀将：" + (day.time || "时间待定") + (day.boss ? " · BOSS【" + day.boss + "】" : ""));
+        lines.push("   到点燕语阁集合，勿迟到~");
+    } else if (day.type === "yijue") {
+        lines.push("🏆 一决高下：" + (day.time || "时间待定") + " · PVP竞技");
+    } else if (day.type === "week") {
+        lines.push("⚔ 百业侠境·周本：" + (day.time || "时间待定") + " · 组队开团");
+    } else if (day.type === "weekend") {
+        lines.push("⚔ 百叶本 / 百业战：" + (day.time || "全天") + " · 全员参战，燕语阁必进");
+    } else {
+        lines.push("🌙 今日无固定副本安排，派对照常~");
+    }
+    lines.push("");
+    lines.push("—— 逍遥引宗门管理组");
+    return lines.join("\n");
+}
+
+function loadPushPreview(){
+    document.getElementById("pushTitle").value =
+        "逍遥引 · " + WD[pushTodayIndex()] + "活动提醒";
+    if (!window.DB) {
+        document.getElementById("pushContent").value = buildPushText(SC_DEFAULT);
+        return;
+    }
+    DB.listSect().then(function (rows) {
+        var row = (rows || []).find(function (r) { return r.id === "schedule"; });
+        document.getElementById("pushContent").value = buildPushText(row && row.content ? row.content : SC_DEFAULT);
+    }).catch(function () {
+        document.getElementById("pushContent").value = buildPushText(SC_DEFAULT);
+    });
+}
+
+document.getElementById("btnPushPreview").addEventListener("click", loadPushPreview);
+
+document.getElementById("btnPushSend").addEventListener("click", function () {
+    var token = (window.APP_CONFIG && APP_CONFIG.PUSHPLUS_TOKEN) || "";
+    if (!token) { setMsg("pushMsg", "未配置推送 token（assets/config.js）", "err"); return; }
+    var title = document.getElementById("pushTitle").value.trim() || "逍遥引 · 活动提醒";
+    var content = document.getElementById("pushContent").value.trim();
+    if (!content) { setMsg("pushMsg", "推送内容不能为空", "err"); return; }
+    if (!confirm("确认把这条推送到微信？\n\n【" + title + "】")) return;
+    setMsg("pushMsg", "正在发送…");
+    fetch("https://www.pushplus.plus/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: token, title: title, content: content, template: "txt" }),
+    }).then(function (r) { return r.json(); }).then(function (res) {
+        if (res && res.code === 200) {
+            setMsg("pushMsg", "已发送，请到微信「推送加」公众号查看", "ok");
+        } else {
+            var tip = (res && res.msg) || "未知错误";
+            if (res && res.code === 905) tip += "（需先在 https://verify.pushplus.plus 完成实名认证）";
+            setMsg("pushMsg", "发送失败：" + tip, "err");
+        }
+    }).catch(function (e) {
+        setMsg("pushMsg", "网络错误：" + (e.message || e), "err");
     });
 });
 
