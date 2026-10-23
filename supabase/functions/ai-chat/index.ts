@@ -4,7 +4,7 @@
 // 密钥设置：函数页 → Secrets → 添加 DEEPSEEK_API_KEY = 你的DeepSeek密钥
 // 本文件仅供参考粘贴，真正运行在 Supabase 云端
 // ============================================================
-import "jsr:@supabase/functions-js/edge-runtime.deno";
+// 说明：不需要 import edge-runtime，Supabase 运行时自带 Deno.serve
 
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
 
