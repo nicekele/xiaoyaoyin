@@ -7,6 +7,8 @@
 window.APP_CONFIG = {
     SUPABASE_URL: "https://mliezotascinddwtzenj.supabase.co",
     SUPABASE_KEY: "sb_publishable_VoedQoI7GYOhUXdb2SMGLQ_9zT0Vnm4",
-    /* PushPlus 微信推送 token（管理后台「微信推送」使用） */
+    /* PushPlus 微信推送（管理后台「微信推送」+ 每日自动推送） */
     PUSHPLUS_TOKEN: "541bcf96416a41a08e94c7f7e0892d54",
+    /* 主题群发ID：推送加创建主题后填这里，成员扫码进主题即可全员接收；留空则只发给你自己 */
+    PUSHPLUS_TOPIC: "",
 };

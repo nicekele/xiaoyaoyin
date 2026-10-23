@@ -1661,13 +1661,18 @@ document.getElementById("btnPushSend").addEventListener("click", function () {
     if (!content) { setMsg("pushMsg", "推送内容不能为空", "err"); return; }
     if (!confirm("确认把这条推送到微信？\n\n【" + title + "】")) return;
     setMsg("pushMsg", "正在发送…");
+    var payload = { token: token, title: title, content: content, template: "txt" };
+    var topic = (window.APP_CONFIG && APP_CONFIG.PUSHPLUS_TOPIC) || "";
+    if (topic) payload.topicId = topic;
     fetch("https://www.pushplus.plus/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: token, title: title, content: content, template: "txt" }),
+        body: JSON.stringify(payload),
     }).then(function (r) { return r.json(); }).then(function (res) {
         if (res && res.code === 200) {
-            setMsg("pushMsg", "已发送，请到微信「推送加」公众号查看", "ok");
+            setMsg("pushMsg", topic
+                ? "已群发到主题（全员微信），请查收"
+                : "已发送（未配置主题ID，目前只发给你自己）", "ok");
         } else {
             var tip = (res && res.msg) || "未知错误";
             if (res && res.code === 905) tip += "（需先在 https://verify.pushplus.plus 完成实名认证）";
