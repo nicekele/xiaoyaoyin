@@ -654,7 +654,10 @@
         <div data-tab-panel="chatlog" data-tab-group="maintab" hidden>
             <div class="grid-2">
                 <div class="panel">
-                    <div class="panel-title2">访 客 会 话</div>
+                    <div class="panel-title2" style="display:flex;justify-content:space-between;align-items:center;">
+                        <span>访 客 会 话</span>
+                        <button class="op danger" type="button" id="btnPurgeChat">清理30天前记录</button>
+                    </div>
                     <p class="hint" style="border:none;padding-top:0;margin-top:0;" id="chatVisHint">加载中…</p>
                     <div class="table-wrap">
                         <table class="tbl">
@@ -1797,6 +1800,16 @@ document.getElementById('chatVisBody').addEventListener('click', function (e) {
             escapeHtml(m.message) + '</div>';
     }).join('');
     box.scrollTop = 0;
+});
+
+document.getElementById('btnPurgeChat').addEventListener('click', function () {
+    if (!confirm('确认清理 30 天前的全部客服记录？此操作不可恢复。')) return;
+    DB.purgeChatLogs(30).then(function () {
+        alert('已清理 30 天前的客服记录');
+        loadChatLogs();
+    }).catch(function (err) {
+        alert('清理失败：' + (err.message || '权限不足'));
+    });
 });
 
 /* ---------- 启动 ---------- */

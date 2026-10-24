@@ -150,6 +150,13 @@
             return client.from('lottery_wins').delete().eq('id', id)
                 .then(function (r) { throwIf(r.error, '撤销抽奖记录'); return true; });
         },
+
+        /* ---------- 客服记录清理（仅管理员，受 RLS 保护） ---------- */
+        purgeChatLogs: function (days) {
+            var cutoff = new Date(Date.now() - (days || 30) * 86400000).toISOString();
+            return client.from('chat_logs').delete().lt('created_at', cutoff)
+                .then(function (r) { throwIf(r.error, '清理客服记录'); return true; });
+        },
     };
 
     global.DB = DB;
