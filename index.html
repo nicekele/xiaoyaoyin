@@ -620,6 +620,38 @@
             background: rgba(201, 169, 97, 0.1);
             transform: translateY(-2px);
         }
+        /* 首领卡片：原画缩略图 + 名字，点击查看详情 */
+        .boss-card {
+            display: flex; flex-direction: column;
+            width: 148px; padding: 0;
+            overflow: hidden; cursor: pointer;
+            text-align: center;
+        }
+        .boss-card .bc-thumb {
+            display: block; width: 100%; height: 70px;
+            background: linear-gradient(135deg, rgba(201,169,97,0.2), rgba(20,16,10,0.9));
+            position: relative; overflow: hidden;
+        }
+        .boss-card .bc-thumb img {
+            width: 100%; height: 100%;
+            object-fit: cover; display: block;
+        }
+        .boss-card .bc-thumb.no-art::after {
+            content: attr(data-ch);
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px; color: rgba(201,169,97,0.55); font-weight: 700;
+        }
+        .boss-card .bc-name {
+            padding: 8px 6px;
+            font-size: 14px; letter-spacing: 2px;
+            color: var(--paper);
+        }
+        .boss-card:hover .bc-name { color: var(--boss-accent); }
+        @media (max-width: 640px) {
+            .boss-card { width: calc(50% - 6px); }
+            .boss-card .bc-thumb { height: 64px; }
+        }
         .boss-cat-art {
             min-height: 170px;
             background-size: cover;
@@ -2399,6 +2431,19 @@
     </div>
 </div>
 
+<!-- 首领详情弹窗 -->
+<div class="wx-modal" id="bossModal" aria-hidden="true">
+    <div class="wx-modal-mask" data-close></div>
+    <div class="wx-modal-card" style="width:min(460px,calc(100vw - 40px));padding:28px 24px 24px;" role="dialog" aria-modal="true" aria-label="首领详情">
+        <button class="wx-modal-close" data-close aria-label="关闭">&times;</button>
+        <img id="bossModalImg" style="width:100%;max-height:220px;object-fit:cover;border-radius:8px;border:1px solid rgba(201,169,97,.35);display:none;" alt="">
+        <div id="bossModalName" style="color:#f2e9d5;font-size:22px;letter-spacing:5px;margin:16px 0 6px;text-align:center;"></div>
+        <div id="bossModalCat" style="color:#6f6f78;font-size:11px;letter-spacing:2px;text-align:center;margin-bottom:14px;"></div>
+        <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(201,169,97,.4),transparent);margin:0 20px 14px;"></div>
+        <p id="bossModalIntro" style="color:#b7b0a0;font-size:13.5px;line-height:1.95;text-align:center;margin:0;"></p>
+    </div>
+</div>
+
 <script src="assets/vendor/supabase.min.js"></script>
 <script src="assets/config.js"></script>
 <script src="assets/db.js"></script>
@@ -2655,12 +2700,14 @@ function renderSchools(){
 }
 
 /* ---------- 首领集：四类副本分组（名单按宗门给定的原始清单） ---------- */
+/* folder = assets/首领/ 下的子目录名；BOSS_INTRO 后期填介绍文案，键为首领名 */
 const BOSSES = [
     {
         no: '壹', color: 'gold',
         name: '主线剧情首领', en: 'STORY BOSSES',
         tip: '官方「首领展示」那一批',
         art: 'assets/boss1.jpg',
+        folder: '主线剧情首领',
         groups: [
             { name: '', list: ['小十七', '田英', '寻心', '叶万山', '道主', '无相皇', '容鸢', '千夜'] },
         ],
@@ -2670,6 +2717,7 @@ const BOSSES = [
         name: '五人试剑副本', en: '5-PLAYER TRIAL',
         tip: '五人本',
         art: 'assets/boss2.jpg',
+        folder: '五人试剑首领',
         groups: [
             { name: '', list: ['无相皇', '小十七', '睡道人', '容鸢', '舞狮', '鬼公子', '皮影戏', '黑财主'] },
         ],
@@ -2679,6 +2727,7 @@ const BOSSES = [
         name: '十人侠境', en: '10-PLAYER RAID',
         tip: '团本 · 最常打的就是这一块',
         art: 'assets/boss3.jpg',
+        folder: '十人侠境首领',
         groups: [
             { name: '老侠境',     list: ['道主', '黑财神'] },
             { name: '笑渡苦行舟', list: ['迷驿舟', '马戏团'] },
@@ -2692,11 +2741,22 @@ const BOSSES = [
         name: '野外首领', en: 'FIELD BOSSES',
         tip: '大世界到处跑的那种',
         art: 'assets/boss4.jpg',
+        folder: '野外首领',
         groups: [
             { name: '', list: ['玼兮瑳兮', '铁心蜈', '花毽魁主', '耶律阿不里', '苍', '天涯客丙申'] },
         ],
     },
 ];
+
+/* 图片文件名与名单用词不一致时在这里映射；也可写相对路径跨目录复用 */
+const BOSS_IMG_ALIAS = { '舞狮': '舞狮兄弟', '皮影戏': '皮影师', '小十七': '../主线剧情首领/小十七' };
+/* 首领介绍：后期把文案填进来，例如 { '无相皇': '江湖人称……' }；没有的显示占位 */
+const BOSS_INTRO = {};
+
+function bossImgSrc(cat, name) {
+    const file = BOSS_IMG_ALIAS[name] || name;
+    return 'assets/首领/' + cat.folder + '/' + file + '.png';
+}
 
 function renderBosses(){
     const box = document.getElementById('bossCats');
@@ -2706,13 +2766,20 @@ function renderBosses(){
         box.innerHTML = '<p class="boss-empty">首领数据加载失败</p>';
         return;
     }
-    box.innerHTML = BOSSES.map(cat => {
+    box.innerHTML = BOSSES.map((cat, ci) => {
         const count = cat.groups.reduce((s, g) => s + g.list.length, 0);
         const rows = cat.groups.map(g => `
             <div class="boss-group">
                 ${g.name ? `<div class="boss-group-name">${g.name}</div>` : ''}
                 <div class="boss-chips">
-                    ${g.list.map(n => `<span class="boss-chip">${n}</span>`).join('')}
+                    ${g.list.map(n => `
+                        <button type="button" class="boss-chip boss-card" data-boss="${n}" data-cat="${ci}">
+                            <span class="bc-thumb" data-ch="${n.slice(0, 1)}">
+                                <img src="${bossImgSrc(cat, n)}" alt="${n}" loading="lazy"
+                                     onerror="this.parentElement.classList.add('no-art');this.remove();">
+                            </span>
+                            <span class="bc-name">${n}</span>
+                        </button>`).join('')}
                 </div>
             </div>`).join('');
         return `
@@ -2733,6 +2800,44 @@ function renderBosses(){
         </div>`;
     }).join('');
 }
+
+/* 首领详情弹窗（复用联系社主的暗金弹层样式） */
+function openBossModal(cat, name) {
+    const img = document.getElementById('bossModalImg');
+    img.style.display = 'none';
+    img.onload = function () { img.style.display = 'block'; };
+    img.onerror = function () { img.style.display = 'none'; };
+    img.src = bossImgSrc(cat, name);
+    document.getElementById('bossModalName').textContent = name;
+    document.getElementById('bossModalCat').textContent = cat.name + (cat.tip ? ' · ' + cat.tip : '');
+    document.getElementById('bossModalIntro').textContent =
+        BOSS_INTRO[name] || '该首领的详细介绍即将上线，敬请期待。';
+    const m = document.getElementById('bossModal');
+    m.classList.add('is-open');
+    m.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('wx-modal-open');
+}
+function closeBossModal() {
+    const m = document.getElementById('bossModal');
+    m.classList.remove('is-open');
+    m.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('wx-modal-open');
+}
+document.addEventListener('click', function (e) {
+    const card = e.target.closest && e.target.closest('.boss-card');
+    if (card) {
+        const cat = BOSSES[Number(card.getAttribute('data-cat'))];
+        if (cat) openBossModal(cat, card.getAttribute('data-boss'));
+        return;
+    }
+    if (e.target.closest && e.target.closest('#bossModal [data-close]')) closeBossModal();
+});
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+        const m = document.getElementById('bossModal');
+        if (m && m.classList.contains('is-open')) closeBossModal();
+    }
+});
 
 /* ---------- 新闻中心（数据来自云端数据库 posts 表，全站同步） ---------- */
 // 本地数组仅作为数据库返回前的占位；数据库加载成功后会被真实数据整体替换，
