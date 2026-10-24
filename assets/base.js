@@ -10,6 +10,40 @@
         return parseInt(v, 10) || 70;
     };
 
+    /* ---------- 离开/关闭页面即自动退出登录 ----------
+       防止忘记退号：关闭标签、刷新、跳到别的页面时清掉登录态，
+       下次打开管理后台必须重新登录（含验证码）。 */
+    function clearAuthStorage() {
+        [window.localStorage, window.sessionStorage].forEach(function (store) {
+            if (!store) return;
+            try {
+                Object.keys(store).forEach(function (k) {
+                    if (k.indexOf('sb-') === 0 && k.indexOf('-auth-token') !== -1) {
+                        store.removeItem(k);
+                    }
+                });
+            } catch (e) { /* 隐私模式等场景忽略 */ }
+        });
+    }
+    function initAutoLogout() {
+        var fired = false;
+        function hardLogout() {
+            if (fired) return;
+            fired = true;
+            /* 先同步清本地存储：即使关页面导致网络请求被中断，登录态也已消失 */
+            clearAuthStorage();
+            if (window.DB && DB.client && DB.client.auth) {
+                try { DB.client.auth.signOut().catch(function () {}); } catch (e) {}
+            }
+        }
+        window.addEventListener('pagehide', hardLogout);
+        window.addEventListener('beforeunload', hardLogout);
+        /* 从往返缓存恢复的页面：登录态已在离开时清除，重载保持一致 */
+        window.addEventListener('pageshow', function (e) {
+            if (e.persisted) location.reload();
+        });
+    }
+
     /* ---------- 1. 汉堡菜单 ---------- */
     function initNavToggle() {
         var toggle = document.querySelector('.nav-toggle');
@@ -292,6 +326,7 @@
         initCounters();
         initAnchorNav();
         initToTop();
+        initAutoLogout();
         document.documentElement.classList.add('ready');
     }
 
