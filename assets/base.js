@@ -10,9 +10,29 @@
         return parseInt(v, 10) || 70;
     };
 
-    /* ---------- 离开/关闭页面即自动退出登录 ----------
-       防止忘记退号：关闭标签、刷新、跳到别的页面时清掉登录态，
-       下次打开管理后台必须重新登录（含验证码）。 */
+    /* ---------- 关闭浏览器后自动退出；页面跳转保持登录 ----------
+       原理：页面存活期间持续写心跳；下次打开站点时若「有登录态但心跳已断」，
+       说明浏览器曾整体关闭（没有页面在替它续心跳），此时清掉登录态。
+       心跳阈值取2分钟：后台标签节流最多约1分钟一次心跳，不会误判。 */
+    var HB_KEY = 'xy_auth_hb';
+    var HB_STALE = 120000;
+
+    function authHb() {
+        try { localStorage.setItem(HB_KEY, String(Date.now())); } catch (e) {}
+    }
+    function authHbStale() {
+        try {
+            var t = Number(localStorage.getItem(HB_KEY) || 0);
+            return !t || (Date.now() - t) > HB_STALE;
+        } catch (e) { return true; }
+    }
+    function hasAuthToken() {
+        try {
+            return Object.keys(localStorage).some(function (k) {
+                return k.indexOf('sb-') === 0 && k.indexOf('-auth-token') !== -1;
+            });
+        } catch (e) { return false; }
+    }
     function clearAuthStorage() {
         [window.localStorage, window.sessionStorage].forEach(function (store) {
             if (!store) return;
@@ -26,21 +46,18 @@
         });
     }
     function initAutoLogout() {
-        var fired = false;
-        function hardLogout() {
-            if (fired) return;
-            fired = true;
-            /* 先同步清本地存储：即使关页面导致网络请求被中断，登录态也已消失 */
+        if (hasAuthToken() && authHbStale()) {
+            /* 浏览器曾整体关闭 → 强制登出，刷新一次回到登录门 */
             clearAuthStorage();
-            if (window.DB && DB.client && DB.client.auth) {
-                try { DB.client.auth.signOut().catch(function () {}); } catch (e) {}
-            }
+            authHb();
+            location.reload();
+            return;
         }
-        window.addEventListener('pagehide', hardLogout);
-        window.addEventListener('beforeunload', hardLogout);
-        /* 从往返缓存恢复的页面：登录态已在离开时清除，重载保持一致 */
-        window.addEventListener('pageshow', function (e) {
-            if (e.persisted) location.reload();
+        authHb();
+        setInterval(authHb, 20000);
+        window.addEventListener('focus', authHb);
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) authHb();
         });
     }
 
