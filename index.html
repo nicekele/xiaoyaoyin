@@ -628,7 +628,7 @@
             text-align: center;
         }
         .boss-card .bc-thumb {
-            display: block; width: 100%; height: 70px;
+            display: block; width: 100%; height: 118px;
             background: linear-gradient(135deg, rgba(201,169,97,0.2), rgba(20,16,10,0.9));
             position: relative; overflow: hidden;
         }
@@ -2436,7 +2436,7 @@
     <div class="wx-modal-mask" data-close></div>
     <div class="wx-modal-card" style="width:min(460px,calc(100vw - 40px));padding:28px 24px 24px;" role="dialog" aria-modal="true" aria-label="首领详情">
         <button class="wx-modal-close" data-close aria-label="关闭">&times;</button>
-        <img id="bossModalImg" style="width:100%;max-height:220px;object-fit:cover;border-radius:8px;border:1px solid rgba(201,169,97,.35);display:none;" alt="">
+        <img id="bossModalImg" style="width:100%;max-height:280px;object-fit:contain;background:#0e0c10;border-radius:8px;border:1px solid rgba(201,169,97,.35);display:none;" alt="">
         <div id="bossModalName" style="color:#f2e9d5;font-size:22px;letter-spacing:5px;margin:16px 0 6px;text-align:center;"></div>
         <div id="bossModalCat" style="color:#6f6f78;font-size:11px;letter-spacing:2px;text-align:center;margin-bottom:14px;"></div>
         <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(201,169,97,.4),transparent);margin:0 20px 14px;"></div>
@@ -2743,19 +2743,29 @@ const BOSSES = [
         art: 'assets/boss4.jpg',
         folder: '野外首领',
         groups: [
-            { name: '', list: ['玼兮瑳兮', '铁心蜈', '花毽魁主', '耶律阿不里', '苍', '天涯客丙申'] },
+            { name: '', list: ['玼兮瑳兮', '铁心蜈', '花毽魁主', '耶律阿不里', '苍', '天涯客·丙申', '司南剑客', '妙算', '拏云蛇', '放排翁', '煞地神', '笃墨蝎', '缺口袋把戏团', '蛇郎中', '观潮客', '金人太簇'] },
+            { name: '四海豪客', list: ['四海豪客·傲诗', '四海豪客·华赋', '四海豪客·狂歌', '四海豪客·门童', '四海豪客·飒词'] },
         ],
     },
 ];
 
-/* 图片文件名与名单用词不一致时在这里映射；也可写相对路径跨目录复用 */
-const BOSS_IMG_ALIAS = { '舞狮': '舞狮兄弟', '皮影戏': '皮影师', '小十七': '../主线剧情首领/小十七' };
+/* 非「名字-全身.png」命名的图片在这里登记（相对分类目录） */
+const BOSS_IMG_FILE = {
+    '小十七': '../主线剧情首领/小十七-全身.png',
+    '舞狮': '舞狮兄弟-全身.png',
+    '皮影戏': '皮影师-图鉴.png',
+    '舞马人': '舞马人-图鉴.png',
+    '司南剑客': '司南剑客-图鉴.png',
+    '妙算': '妙算-全身.jpg',
+};
 /* 首领介绍：后期把文案填进来，例如 { '无相皇': '江湖人称……' }；没有的显示占位 */
 const BOSS_INTRO = {};
 
 function bossImgSrc(cat, name) {
-    const file = BOSS_IMG_ALIAS[name] || name;
-    return 'assets/首领/' + cat.folder + '/' + file + '.png';
+    if (BOSS_IMG_FILE[name]) {
+        return 'assets/首领/' + cat.folder + '/' + BOSS_IMG_FILE[name];
+    }
+    return 'assets/首领/' + cat.folder + '/' + name + '-全身.png';
 }
 
 function renderBosses(){
