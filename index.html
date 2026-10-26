@@ -1827,11 +1827,13 @@
         <button class="world-tab" data-tab="hexi">河西</button>
         <button class="world-tab" data-tab="bujianshan">不见山</button>
         <button class="world-tab" data-tab="jiangnan">江南</button>
+        <button class="world-tab" data-tab="weiyang">未央城</button>
+        <button class="world-tab" data-tab="qingzhou">青州</button>
         <button class="world-tab" data-tab="soon">敬请期待</button>
     </div>
     <div class="world-display">
         <div class="world-image">
-            <img id="worldImg" src="assets/world-qinghe.jpg" alt="清河">
+            <img id="worldImg" src="assets/地图/清河/清河-实景.jpg" alt="清河">
             <div class="world-image-overlay"></div>
             <div class="world-image-tag" id="worldTag">第 一 站</div>
         </div>
@@ -2597,33 +2599,45 @@ if (window.DB) {
 const WORLDS = {
     qinghe: {
         name: "清河", en: "QINGHE · THE FIRST STOP", tag: "第 一 站",
-        img: "assets/world-qinghe.jpg", pending: false,
+        img: "assets/地图/清河/清河-实景.jpg", pending: false,
         desc: "清河，燕云大地的起点。山水相映，市井繁华，初入江湖的游侠在此启程。古桥横跨溪流，酒旗迎风招展，万千故事从此地悄然拉开序幕。鼓为律之枢，绫为舞之韵，跳珠撼玉，流风回雪。",
         features: [["🏮", "初入江湖"], ["🎭", "樊楼歌舞"], ["⛩", "古刹寻踪"]],
     },
     kaifeng: {
         name: "开封", en: "KAIFENG · THE CAPITAL", tag: "繁 华 之 都",
-        img: "assets/world-kaifeng.jpg", pending: false,
+        img: "assets/地图/开封/开封-实景.jpg", pending: false,
         desc: "开封，北宋都城，天下枢衡。御街贯通南北，樊楼高耸入云，勾栏瓦舍彻夜不息。太学之中书声琅琅，州桥之上车马如龙。一城烟火，半部华胥。",
         features: [["🏯", "御街州桥"], ["🍶", "樊楼夜市"], ["📜", "太学论道"]],
     },
     hexi: {
         name: "河西", en: "HEXI · THE FRONTIER", tag: "边 塞 长 风",
-        img: "assets/world-hexi.jpg", pending: false,
+        img: "assets/地图/河西/河西-实景.jpg", pending: false,
         desc: "河西，古道西风，黄沙万里。凉州孤城矗立于戈壁尽头，驼铃声声穿过烽燧与石窟。此地刀客最烈，烈马最疾，一场大风便是一场江湖。",
         features: [["🐫", "丝路驼铃"], ["🏰", "凉州孤城"], ["🖼", "敦煌石窟"]],
     },
     bujianshan: {
         name: "不见山", en: "BUJIANSHAN · THE HIDDEN", tag: "云 海 之 上",
-        img: "assets/world-bujianshan.jpg", pending: false,
+        img: "assets/地图/不见山/不见山-实景.jpg", pending: false,
         desc: "不见山，终年隐于云海之下，非有缘者不可见。石阶千级直上山门，钟声自雾中来，又散于雾中。世人皆道此山无路，唯轻功绝顶者，能踏雾而行。",
         features: [["⛰", "云海石阶"], ["🥋", "隐世山门"], ["🎐", "问道听钟"]],
     },
     jiangnan: {
         name: "江南", en: "JIANGNAN · THE MIST", tag: "烟 雨 之 地",
-        img: "assets/world-jiangnan.jpg", pending: false,
+        img: "assets/地图/江南/江南-实景.jpg", pending: false,
         desc: "江南，烟雨长廊，荷风十里。乌篷船摇过石桥，水榭楼台倒映涟漪。此地剑法最柔，柔中藏锋，一伞烟雨便可遮尽半生恩仇。",
         features: [["🌧", "烟雨水乡"], ["🪷", "荷塘月色"], ["🛶", "乌篷听雨"]],
+    },
+    weiyang: {
+        name: "未央城", en: "WEIYANG · THE IMPERIAL", tag: "宫 城 万 象",
+        img: "assets/地图/未央城/未央城-实景.jpg", pending: false,
+        desc: "未央城，宫阙连绵，气象万千。长乐未央，是前朝遗下的名字，也是如今江湖人向往的繁华。禁城之外市井沸腾，禁城之内暗流涌动，一砖一瓦皆藏旧事。",
+        features: [["🏯", "宫城气象"], ["🗡", "禁中探秘"], ["🌙", "长乐未央"]],
+    },
+    qingzhou: {
+        name: "青州", en: "QINGZHOU · THE COAST", tag: "海 岱 之 间",
+        img: "assets/地图/青州/青州-实景.jpg", pending: false,
+        desc: "青州，海岱之间，古郡新雨。码头商旅与市井烟火在此交汇，酒旗临海而立。义士多聚于此，一碗烈酒下肚，便是过命的交情。",
+        features: [["🌊", "海隅风云"], ["🏮", "市井烟火"], ["⚔", "义士聚饮"]],
     },
     soon: {
         name: "新地区", en: "COMING SOON", tag: "开 发 中",
