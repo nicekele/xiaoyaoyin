@@ -404,6 +404,7 @@
 
         <div class="admin-tabs" data-tab-group="maintab">
             <button type="button" data-tab="members" class="active">成员管理</button>
+            <button type="button" data-tab="weekly">周活录入</button>
             <button type="button" data-tab="posts">内容发布</button>
             <button type="button" data-tab="invite">账号管理</button>
             <button type="button" data-tab="lottery">活跃抽奖</button>
@@ -486,6 +487,34 @@
                         <div class="msg" id="memberMsg"></div>
                     </form>
                 </div>
+            </div>
+        </div>
+
+        <!-- 周活批量录入 -->
+        <div data-tab-panel="weekly" data-tab-group="maintab" hidden>
+            <div class="panel">
+                <div class="panel-title2" style="display:flex;justify-content:space-between;align-items:center;">
+                    <span>周 活 批 量 录 入</span>
+                    <span style="display:flex;gap:10px;">
+                        <button class="op" type="button" id="btnWaReload">刷新</button>
+                        <button class="op danger" type="button" id="btnWaClear">周一清零</button>
+                        <button class="btn btn-primary" type="button" id="btnWaSave" style="padding:8px 18px;">💾 一键保存全部</button>
+                    </span>
+                </div>
+                <p class="hint" style="border:none;padding-top:0;margin-top:0;">
+                    像表格一样直接改数字，改完点<span style="color:var(--gold);">一键保存全部</span>——只提交有变动的行。
+                    「周一清零」会把所有人的<span style="color:var(--gold);">周活跃和本周在线时长</span>归零（月活跃不动）。
+                </p>
+                <div class="table-wrap" style="margin-top:12px;">
+                    <table class="tbl">
+                        <thead><tr>
+                            <th>成员</th><th>武学流派</th>
+                            <th>周活跃（≤8000）</th><th>本周在线（小时）</th><th>月活跃</th>
+                        </tr></thead>
+                        <tbody id="waBody"></tbody>
+                    </table>
+                </div>
+                <div class="msg" id="waMsg"></div>
             </div>
         </div>
 
@@ -991,6 +1020,7 @@ function loadAll(){
     loadLottery();
     loadSched();
     loadChatLogs();
+    loadWeeklyAct();
 }
 
 /* 成员列表 */
@@ -1343,6 +1373,115 @@ document.getElementById('acctBody').addEventListener('click', function(e){
         });
 });
 
+/* ---------- 周活批量录入 ---------- */
+var waRows = [];   /* {id, name, school, orig:{active,hours_week,active_month}} */
+
+function loadWeeklyAct(){
+    if (!window.DB) return;
+    setMsg('waMsg', '加载中…');
+    DB.listMembers().then(function(rows){
+        waRows = (rows || []).map(function(m){
+            return {
+                id: m.id,
+                name: m.name || ('#' + m.id),
+                school: m.school || '',
+                orig: {
+                    active: m.active || 0,
+                    hours_week: m.hours_week || 0,
+                    active_month: m.active_month || 0,
+                },
+            };
+        });
+        renderWeeklyAct();
+        setMsg('waMsg', '', '');
+    }).catch(function(e){
+        setMsg('waMsg', '读取失败：' + (e.message || e), 'err');
+    });
+}
+
+function renderWeeklyAct(){
+    var tb = document.getElementById('waBody');
+    if (!waRows.length) {
+        tb.innerHTML = '<tr><td colspan="5" class="empty">暂无成员，请先在「成员管理」添加</td></tr>';
+        return;
+    }
+    tb.innerHTML = waRows.map(function(r){
+        return '<tr data-wa="' + r.id + '">' +
+            '<td style="color:var(--paper)">' + escapeHtml(r.name) + '</td>' +
+            '<td style="color:#8f8877">' + escapeHtml(r.school) + '</td>' +
+            '<td><input type="number" class="wa-in" data-f="active" min="0" max="8000" value="' + r.orig.active + '" style="width:90px;background:#0a0908;border:1px solid rgba(201,169,97,.25);color:var(--gold);padding:5px 8px;border-radius:4px;"></td>' +
+            '<td><input type="number" class="wa-in" data-f="hours_week" min="0" step="0.5" value="' + r.orig.hours_week + '" style="width:90px;background:#0a0908;border:1px solid rgba(201,169,97,.25);color:var(--paper);padding:5px 8px;border-radius:4px;"></td>' +
+            '<td><input type="number" class="wa-in" data-f="active_month" min="0" value="' + r.orig.active_month + '" style="width:100px;background:#0a0908;border:1px solid rgba(201,169,97,.25);color:#a6c8e8;padding:5px 8px;border-radius:4px;"></td>' +
+        '</tr>';
+    }).join('');
+    tb.querySelectorAll('.wa-in').forEach(function(inp){
+        inp.addEventListener('input', function(){
+            var row = inp.closest('tr');
+            var fid = Number(row.getAttribute('data-wa'));
+            var rec = waRows.find(function(x){ return x.id === fid; });
+            if (!rec) return;
+            var f = inp.getAttribute('data-f');
+            var v = f === 'hours_week'
+                ? Math.max(0, parseFloat(inp.value) || 0)
+                : Math.max(0, parseInt(inp.value, 10) || 0);
+            row.style.outline = (v !== rec.orig[f]) ? '1px solid rgba(201,169,97,.55)' : '';
+        });
+    });
+}
+
+document.getElementById('btnWaReload').addEventListener('click', loadWeeklyAct);
+
+document.getElementById('btnWaSave').addEventListener('click', function(){
+    var tb = document.getElementById('waBody');
+    var jobs = [];
+    tb.querySelectorAll('tr[data-wa]').forEach(function(row){
+        var fid = Number(row.getAttribute('data-wa'));
+        var rec = waRows.find(function(x){ return x.id === fid; });
+        if (!rec) return;
+        var patch = {};
+        row.querySelectorAll('.wa-in').forEach(function(inp){
+            var f = inp.getAttribute('data-f');
+            var v = f === 'hours_week'
+                ? Math.max(0, parseFloat(inp.value) || 0)
+                : (f === 'active'
+                    ? Math.min(8000, Math.max(0, parseInt(inp.value, 10) || 0))
+                    : Math.max(0, parseInt(inp.value, 10) || 0));
+            if (v !== rec.orig[f]) patch[f] = v;
+        });
+        if (Object.keys(patch).length) jobs.push({ id: fid, patch: patch });
+    });
+    if (!jobs.length) { setMsg('waMsg', '没有需要保存的改动', 'err'); return; }
+    setMsg('waMsg', '正在保存 ' + jobs.length + ' 位成员…');
+    var i = 0, done = 0, failed = 0;
+    function next(){
+        if (i >= jobs.length){
+            setMsg('waMsg', failed
+                ? ('保存完成：成功 ' + done + '，失败 ' + failed + '（权限不足请重新登录）')
+                : ('已保存 ' + done + ' 位成员的改动'), failed ? 'err' : 'ok');
+            loadWeeklyAct();
+            return;
+        }
+        var job = jobs[i++];
+        DB.updateMember(job.id, job.patch).then(function(){
+            done++;
+        }).catch(function(){
+            failed++;
+        }).then(next);
+    }
+    var n = Math.min(8, jobs.length);
+    for (var k = 0; k < n; k++) next();
+});
+
+document.getElementById('btnWaClear').addEventListener('click', function(){
+    if (!confirm('确认把所有成员的「周活跃」和「本周在线时长」清零？\n（月活跃不受影响；清零后直接填新一周的数再保存）')) return;
+    var tb = document.getElementById('waBody');
+    tb.querySelectorAll('.wa-in[data-f="active"], .wa-in[data-f="hours_week"]').forEach(function(inp){
+        inp.value = 0;
+        inp.dispatchEvent(new Event('input'));
+    });
+    setMsg('waMsg', '已全部置零（尚未保存），请填入本周数据后点「一键保存全部」', 'ok');
+});
+
 /* ---------- 活跃抽奖（周/月双周期） ---------- */
 /* quota=该周期全宗门总份数；minActive=所需活跃门槛 */
 var LOT_CYCLES = {
@@ -1562,6 +1701,7 @@ document.addEventListener('tabchange', function(e){
     if (e.detail.tab === 'schedule') loadSched();
     if (e.detail.tab === 'push') loadPushPreview();
     if (e.detail.tab === 'chatlog') loadChatLogs();
+    if (e.detail.tab === 'weekly') loadWeeklyAct();
 });
 
 /* ---------- 活动时间表编辑 ---------- */
