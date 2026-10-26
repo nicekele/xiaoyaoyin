@@ -399,6 +399,7 @@
             <span class="badge">管理员</span>
             <div class="spacer"></div>
             <button class="btn" id="btnInvite">➕ 添加账号</button>
+            <button class="btn" id="btnChangePass">修改密码</button>
             <button class="btn" id="btnSignOut">退出登录</button>
         </div>
 
@@ -973,6 +974,22 @@ function bindSignOut(id){
 }
 bindSignOut('btnSignOut');
 bindSignOut('btnSignOut2');
+
+/* ---------- 登录态下直接改密码（无需邮箱） ---------- */
+document.getElementById('btnChangePass').addEventListener('click', function(){
+    var p1 = prompt('修改密码\n\n请输入新密码（至少 6 位）：');
+    if (p1 === null) return;
+    if (p1.length < 6) { alert('密码至少 6 位'); return; }
+    var p2 = prompt('再输入一遍新密码确认：');
+    if (p2 === null) return;
+    if (p1 !== p2) { alert('两次输入的密码不一致'); return; }
+    if (!confirm('确认把登录密码改成新密码？')) return;
+    DB.updatePassword(p1).then(function(){
+        alert('密码已修改，下次登录请使用新密码。');
+    }).catch(function(err){
+        alert('修改失败：' + (err.message || '请重新登录后再试'));
+    });
+});
 </script>
 <script src="assets/schools.js"></script>
 <script>
