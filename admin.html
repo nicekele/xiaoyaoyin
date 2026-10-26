@@ -1049,11 +1049,16 @@ function loadMembers(){
             return;
         }
         tb.innerHTML = rows.map(function(m){
+            var roles = ['社长', '副社', '管理', '社众', '学徒'];
+            var roleSel = '<select class="role-quick" data-rid="' + m.id + '" style="background:#0a0908;border:1px solid rgba(201,169,97,.3);color:var(--gold);padding:3px 6px;border-radius:4px;font-size:12px;">' +
+                roles.map(function(o){
+                    return '<option' + (m.role === o ? ' selected' : '') + '>' + o + '</option>';
+                }).join('') + '</select>';
             return '<tr>' +
                 '<td style="color:var(--paper)">' + escapeHtml(m.name) + '</td>' +
                 '<td style="font-family:Consolas,monospace;color:#c9a961;">' + escapeHtml(m.game_id || '—') + '</td>' +
                 '<td>' + badge(m.school, 'sc') + '</td>' +
-                '<td>' + roleTag(m.role) + '</td>' +
+                '<td>' + roleSel + '</td>' +
                 '<td>Lv.' + (m.level || 100) + '</td>' +
                 '<td style="color:var(--gold)">' + (m.active || 0) + '</td>' +
                 '<td style="color:#a6c8e8">' + (m.active_month || 0) + '</td>' +
@@ -1069,6 +1074,21 @@ function loadMembers(){
             '<tr><td colspan="9" class="empty">读取失败：' + escapeHtml(e.message) + '</td></tr>';
     });
 }
+
+/* 身份列下拉：选完立即保存 */
+document.getElementById('memBody').addEventListener('change', function(e){
+    var sel = e.target.closest('.role-quick');
+    if (!sel) return;
+    var id = Number(sel.getAttribute('data-rid'));
+    var role = sel.value;
+    setMsg('memberMsg', '正在保存职位…');
+    DB.updateMember(id, { role: role }).then(function(){
+        setMsg('memberMsg', '职位已改为「' + role + '」', 'ok');
+    }).catch(function(err){
+        setMsg('memberMsg', '保存失败：' + (err.message || '权限不足'), 'err');
+        loadMembers();   /* 失败回滚显示 */
+    });
+});
 
 document.getElementById('btnExportCsv').addEventListener('click', function(){
     DB.listMembers().then(function(rows){
