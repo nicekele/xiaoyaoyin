@@ -2371,7 +2371,7 @@
             <ul>
                 <li><a href="#">官方论坛</a></li>
                 <li><a href="#">客服中心</a></li>
-                <li><a href="#">商务合作</a></li>
+                <li><a href="#" id="bizLink">商务合作</a></li>
                 <li><a href="#">招贤纳士</a></li>
                 <li><a href="#news">最新公告</a></li>
             </ul>
@@ -2443,6 +2443,31 @@
         <div id="bossModalCat" style="color:#6f6f78;font-size:11px;letter-spacing:2px;text-align:center;margin-bottom:14px;"></div>
         <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(201,169,97,.4),transparent);margin:0 20px 14px;"></div>
         <p id="bossModalIntro" style="color:#b7b0a0;font-size:13.5px;line-height:1.95;text-align:center;margin:0;"></p>
+    </div>
+</div>
+
+<!-- 商务合作卡片 -->
+<div class="wx-modal" id="bizModal" aria-hidden="true">
+    <div class="wx-modal-mask" data-close></div>
+    <div class="wx-modal-card" style="width:min(380px,calc(100vw - 40px));" role="dialog" aria-modal="true" aria-label="商务合作">
+        <button class="wx-modal-close" data-close aria-label="关闭">&times;</button>
+        <div class="wx-modal-seal">商</div>
+        <div class="wx-modal-title">商务合作</div>
+        <div class="wx-modal-sub">XIAOYAOYIN · BUSINESS</div>
+        <p style="color:#b7b0a0;font-size:13px;line-height:1.9;text-align:center;margin:14px 4px 6px;">
+            联动洽谈、赛事合作、物资赞助及其他商务事宜，<br>
+            欢迎联系<span style="color:var(--gold);">社主</span>详聊。<br>
+            添加时请备注：<span style="color:var(--gold-light);">来意 + 称呼</span>
+        </p>
+        <div class="wx-modal-wechat">
+            <span class="label">微信号</span>
+            <span class="value">Mike_G-u</span>
+        </div>
+        <div class="wx-modal-qr">
+            <img id="bizQrImg" style="display:none;" alt="社主微信二维码">
+            <div class="wx-modal-qr-ph" id="bizQrPh">二维码加载中…</div>
+        </div>
+        <div class="wx-modal-tip">也可以点「<strong>联系社主</strong>」添加，同一微信号</div>
     </div>
 </div>
 
@@ -2594,6 +2619,32 @@ if (window.DB) {
         if (row && row.content) renderSchedule(row.content);
     }).catch(function () { /* 读不到就保持默认骨架 */ });
 }
+
+/* ---------- 商务合作卡片 ---------- */
+(function initBizModal(){
+    var modal = document.getElementById('bizModal');
+    var link = document.getElementById('bizLink');
+    if (!modal || !link) return;
+    var img = document.getElementById('bizQrImg');
+    var ph = document.getElementById('bizQrPh');
+    img.src = 'assets/wechat-qr.png';
+    img.addEventListener('load', function(){
+        img.style.display = 'block';
+        img.style.width = '190px';
+        img.style.height = '190px';
+        img.style.margin = '0 auto';
+        img.style.padding = '10px';
+        img.style.background = '#fff';
+        img.style.borderRadius = '10px';
+        img.style.border = '1px solid rgba(201,169,97,.4)';
+        if (ph) ph.style.display = 'none';
+    });
+    function open(){ modal.classList.add('is-open'); modal.setAttribute('aria-hidden','false'); document.body.classList.add('wx-modal-open'); }
+    function close(){ modal.classList.remove('is-open'); modal.setAttribute('aria-hidden','true'); document.body.classList.remove('wx-modal-open'); }
+    link.addEventListener('click', function(e){ e.preventDefault(); open(); });
+    modal.addEventListener('click', function(e){ if (e.target.hasAttribute('data-close')) close(); });
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && modal.classList.contains('is-open')) close(); });
+})();
 
 /* ---------- 燕云世界：6 个地区 ---------- */
 const WORLDS = {
