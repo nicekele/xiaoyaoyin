@@ -405,7 +405,7 @@
 
         <div class="admin-tabs" data-tab-group="maintab">
             <button type="button" data-tab="members" class="active">成员管理</button>
-            <button type="button" data-tab="weekly">周活录入</button>
+            <button type="button" data-tab="weekly">快速调整</button>
             <button type="button" data-tab="posts">内容发布</button>
             <button type="button" data-tab="invite">账号管理</button>
             <button type="button" data-tab="lottery">活跃抽奖</button>
@@ -495,7 +495,7 @@
         <div data-tab-panel="weekly" data-tab-group="maintab" hidden>
             <div class="panel">
                 <div class="panel-title2" style="display:flex;justify-content:space-between;align-items:center;">
-                    <span>周 活 批 量 录 入</span>
+                    <span>快 速 调 整 · 周活与职位</span>
                     <span style="display:flex;gap:10px;">
                         <button class="op" type="button" id="btnWaReload">刷新</button>
                         <button class="op danger" type="button" id="btnWaClear">周一清零</button>
@@ -503,13 +503,13 @@
                     </span>
                 </div>
                 <p class="hint" style="border:none;padding-top:0;margin-top:0;">
-                    像表格一样直接改数字，改完点<span style="color:var(--gold);">一键保存全部</span>——只提交有变动的行。
-                    「周一清零」会把所有人的<span style="color:var(--gold);">周活跃和本周在线时长</span>归零（月活跃不动）。
+                    数字像表格一样直接改，改完点<span style="color:var(--gold);">一键保存全部</span>；<span style="color:var(--gold);">身份下拉选完立即保存</span>。
+                    「周一清零」把所有人的周活跃和本周在线归零（月活跃不动）。
                 </p>
                 <div class="table-wrap" style="margin-top:12px;">
                     <table class="tbl">
                         <thead><tr>
-                            <th>成员</th><th>武学流派</th>
+                            <th>成员</th><th>武学流派</th><th>身份</th>
                             <th>周活跃（≤8000）</th><th>本周在线（小时）</th><th>月活跃</th>
                         </tr></thead>
                         <tbody id="waBody"></tbody>
@@ -1049,16 +1049,11 @@ function loadMembers(){
             return;
         }
         tb.innerHTML = rows.map(function(m){
-            var roles = ['社长', '副社', '管理', '社众', '学徒'];
-            var roleSel = '<select class="role-quick" data-rid="' + m.id + '" style="background:#0a0908;border:1px solid rgba(201,169,97,.3);color:var(--gold);padding:3px 6px;border-radius:4px;font-size:12px;">' +
-                roles.map(function(o){
-                    return '<option' + (m.role === o ? ' selected' : '') + '>' + o + '</option>';
-                }).join('') + '</select>';
             return '<tr>' +
                 '<td style="color:var(--paper)">' + escapeHtml(m.name) + '</td>' +
                 '<td style="font-family:Consolas,monospace;color:#c9a961;">' + escapeHtml(m.game_id || '—') + '</td>' +
                 '<td>' + badge(m.school, 'sc') + '</td>' +
-                '<td>' + roleSel + '</td>' +
+                '<td>' + roleTag(m.role) + '</td>' +
                 '<td>Lv.' + (m.level || 100) + '</td>' +
                 '<td style="color:var(--gold)">' + (m.active || 0) + '</td>' +
                 '<td style="color:#a6c8e8">' + (m.active_month || 0) + '</td>' +
@@ -1074,21 +1069,6 @@ function loadMembers(){
             '<tr><td colspan="9" class="empty">读取失败：' + escapeHtml(e.message) + '</td></tr>';
     });
 }
-
-/* 身份列下拉：选完立即保存 */
-document.getElementById('memBody').addEventListener('change', function(e){
-    var sel = e.target.closest('.role-quick');
-    if (!sel) return;
-    var id = Number(sel.getAttribute('data-rid'));
-    var role = sel.value;
-    setMsg('memberMsg', '正在保存职位…');
-    DB.updateMember(id, { role: role }).then(function(){
-        setMsg('memberMsg', '职位已改为「' + role + '」', 'ok');
-    }).catch(function(err){
-        setMsg('memberMsg', '保存失败：' + (err.message || '权限不足'), 'err');
-        loadMembers();   /* 失败回滚显示 */
-    });
-});
 
 document.getElementById('btnExportCsv').addEventListener('click', function(){
     DB.listMembers().then(function(rows){
@@ -1423,6 +1403,7 @@ function loadWeeklyAct(){
                 name: m.name || ('#' + m.id),
                 school: m.school || '',
                 orig: {
+                    role: m.role || '社众',
                     active: m.active || 0,
                     hours_week: m.hours_week || 0,
                     active_month: m.active_month || 0,
@@ -1439,13 +1420,18 @@ function loadWeeklyAct(){
 function renderWeeklyAct(){
     var tb = document.getElementById('waBody');
     if (!waRows.length) {
-        tb.innerHTML = '<tr><td colspan="5" class="empty">暂无成员，请先在「成员管理」添加</td></tr>';
+        tb.innerHTML = '<tr><td colspan="6" class="empty">暂无成员，请先在「成员管理」添加</td></tr>';
         return;
     }
+    var roles = ['社长', '副社', '管理', '社众', '学徒'];
     tb.innerHTML = waRows.map(function(r){
         return '<tr data-wa="' + r.id + '">' +
             '<td style="color:var(--paper)">' + escapeHtml(r.name) + '</td>' +
             '<td style="color:#8f8877">' + escapeHtml(r.school) + '</td>' +
+            '<td><select class="wa-role" style="background:#0a0908;border:1px solid rgba(201,169,97,.3);color:var(--gold);padding:4px 6px;border-radius:4px;font-size:12px;">' +
+                roles.map(function(o){
+                    return '<option' + (r.orig.role === o ? ' selected' : '') + '>' + o + '</option>';
+                }).join('') + '</select></td>' +
             '<td><input type="number" class="wa-in" data-f="active" min="0" max="8000" value="' + r.orig.active + '" style="width:90px;background:#0a0908;border:1px solid rgba(201,169,97,.25);color:var(--gold);padding:5px 8px;border-radius:4px;"></td>' +
             '<td><input type="number" class="wa-in" data-f="hours_week" min="0" step="0.5" value="' + r.orig.hours_week + '" style="width:90px;background:#0a0908;border:1px solid rgba(201,169,97,.25);color:var(--paper);padding:5px 8px;border-radius:4px;"></td>' +
             '<td><input type="number" class="wa-in" data-f="active_month" min="0" value="' + r.orig.active_month + '" style="width:100px;background:#0a0908;border:1px solid rgba(201,169,97,.25);color:#a6c8e8;padding:5px 8px;border-radius:4px;"></td>' +
@@ -1462,6 +1448,22 @@ function renderWeeklyAct(){
                 ? Math.max(0, parseFloat(inp.value) || 0)
                 : Math.max(0, parseInt(inp.value, 10) || 0);
             row.style.outline = (v !== rec.orig[f]) ? '1px solid rgba(201,169,97,.55)' : '';
+        });
+    });
+    /* 身份下拉：选完立即保存 */
+    tb.querySelectorAll('.wa-role').forEach(function(sel){
+        sel.addEventListener('change', function(){
+            var row = sel.closest('tr');
+            var fid = Number(row.getAttribute('data-wa'));
+            var rec = waRows.find(function(x){ return x.id === fid; });
+            setMsg('waMsg', '正在保存职位…');
+            DB.updateMember(fid, { role: sel.value }).then(function(){
+                if (rec) rec.orig.role = sel.value;
+                setMsg('waMsg', (rec ? rec.name : '') + ' 职位已改为「' + sel.value + '」', 'ok');
+            }).catch(function(err){
+                setMsg('waMsg', '保存失败：' + (err.message || '权限不足'), 'err');
+                if (rec) sel.value = rec.orig.role;
+            });
         });
     });
 }
