@@ -2462,6 +2462,7 @@
         <div class="wx-modal-wechat">
             <span class="label">微信号</span>
             <span class="value">Mike_G-u</span>
+            <button class="wx-copy" id="bizCopyWx" type="button">复制</button>
         </div>
         <div class="wx-modal-qr">
             <img id="bizQrImg" style="display:none;" alt="社主微信二维码">
@@ -2642,6 +2643,13 @@ if (window.DB) {
     function open(){ modal.classList.add('is-open'); modal.setAttribute('aria-hidden','false'); document.body.classList.add('wx-modal-open'); }
     function close(){ modal.classList.remove('is-open'); modal.setAttribute('aria-hidden','true'); document.body.classList.remove('wx-modal-open'); }
     link.addEventListener('click', function(e){ e.preventDefault(); open(); });
+    var copyBtn = document.getElementById('bizCopyWx');
+    copyBtn.addEventListener('click', function(){
+        navigator.clipboard.writeText('Mike_G-u').then(function(){
+            copyBtn.textContent = '已复制';
+            setTimeout(function(){ copyBtn.textContent = '复制'; }, 1500);
+        });
+    });
     modal.addEventListener('click', function(e){ if (e.target.hasAttribute('data-close')) close(); });
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && modal.classList.contains('is-open')) close(); });
 })();
